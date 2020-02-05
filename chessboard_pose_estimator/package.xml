@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>chessboard_pose_estimator</name>
+  <version>1.0.0</version>
+  <description>Pose estimation for chessboards</description>
+  <maintainer email="markubjo@stud.ntnu.no">Markus Bjønnes</maintainer>
+
+  <license>Apache License 2.0</license>
+  <author email="markubjo@stud.ntnu.no">Markus Bjønnes</author>
+  
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+
+  
+  <depend>Zivid</depend>
+  <depend>OpenCV</depend>
+  <depend>xtensor</depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>
