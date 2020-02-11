@@ -20,6 +20,10 @@ int main()
 	pose_estimator.extract_feature_pnt_cld();
 
 	std::vector<float> h = pose_estimator.estimate_pose(); 
+	for(auto elem : h)
+	{
+		std::cout << elem << std::endl;
+	}
 	
 	pose_estimator.show_img();
 

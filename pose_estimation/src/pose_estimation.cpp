@@ -65,19 +65,19 @@ void PoseEstimation::point_cloud_sub_callback(const sensor_msgs::msg::PointCloud
 void PoseEstimation::publish_pose()
 {
     //estimate pose
-    chessboard_pose_estimator.set_point_cloud(img, xyz);
-    std::vector pose_estimate = chessboard_pose_estimator.estimate_pose();
-    //generate pose msg
-    geometry_msgs::msg::Pose pose;
-    pose.position.x = pose_estimate[0];
-    pose.position.y = pose_estimate[1];
-    pose.position.z = pose_estimate[2];
-    pose.orientation.x = pose_estimate[3];
-    pose.orientation.y = pose_estimate[4];
-    pose.orientation.z = pose_estimate[5];
-    pose.orientation.w = pose_estimate[6];
-    //publish pose
-    object_pose_pub_->publish(pose);
+    // chessboard_pose_estimator.set_point_cloud(img, xyz);
+    // std::vector pose_estimate = chessboard_pose_estimator.estimate_pose();
+    // //generate pose msg
+    // geometry_msgs::msg::Pose pose;
+    // pose.position.x = pose_estimate[0];
+    // pose.position.y = pose_estimate[1];
+    // pose.position.z = pose_estimate[2];
+    // pose.orientation.x = pose_estimate[3];
+    // pose.orientation.y = pose_estimate[4];
+    // pose.orientation.z = pose_estimate[5];
+    // pose.orientation.w = pose_estimate[6];
+    // //publish pose
+    // object_pose_pub_->publish(pose);
 }
 
 } //namespace pose_estimation

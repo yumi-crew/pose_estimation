@@ -145,9 +145,9 @@ std::vector<float> as_ros_pose_msg(xt::xarray<float> h)
 	float x = h(0, 3);
 	float y = h(1, 3);
 	float z = h(2, 3);
-	float ox = 0.5 * std::signbit(h(2, 1) - h(1, 2)) * std::sqrt(h(0, 0) - h(1, 1) - h(2, 2) + 1);
-	float oy = 0.5 * std::signbit(h(0, 2) - h(2, 0)) * std::sqrt(h(1, 1) - h(2, 2) - h(0, 0) + 1);
-	float oz = 0.5 * std::signbit(h(1, 0) - h(0, 1)) * std::sqrt(h(2, 2) - h(0, 0) - h(1, 1) + 1);
+	float ox = 0.5 * std::copysign(1.0, h(2, 1) - h(1, 2)) * std::sqrt(h(0, 0) - h(1, 1) - h(2, 2) + 1);
+	float oy = 0.5 * std::copysign(1.0, h(0, 2) - h(2, 0)) * std::sqrt(h(1, 1) - h(2, 2) - h(0, 0) + 1);
+	float oz = 0.5 * std::copysign(1.0, h(1, 0) - h(0, 1)) * std::sqrt(h(2, 2) - h(0, 0) - h(1, 1) + 1);
 	float w = 0.5 * std::sqrt(h(0, 0) + h(1, 1) + h(2, 2) + 1);
 	return std::vector<float>({x, y, z, ox, oy, oz, w});
 }
