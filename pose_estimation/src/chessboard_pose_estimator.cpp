@@ -1,15 +1,29 @@
-#include "chessboard_pose_estimator.h"
+#include <iostream>
+#include <math.h>
+#include "chessboard_pose_estimator.hpp"
 
-CPE::ChessboardPoseEstimator::ChessboardPoseEstimator(cv::Mat img, xt::xarray<float> xyz)
+namespace CPE
+{
+ChessboardPoseEstimator::ChessboardPoseEstimator(cv::Mat img, xt::xarray<float> xyz)
 	: rgb_(img), xyz_(xyz)
 {
 }
 
-CPE::ChessboardPoseEstimator::~ChessboardPoseEstimator()
+ChessboardPoseEstimator::ChessboardPoseEstimator()
 {
 }
 
-void CPE::ChessboardPoseEstimator::find_corners()
+ChessboardPoseEstimator::~ChessboardPoseEstimator()
+{
+}
+
+void ChessboardPoseEstimator::set_point_cloud(cv::Mat img, xt::xarray<float> xyz)
+{
+	xyz_ = xyz;
+	rgb_ = img;
+}
+
+void ChessboardPoseEstimator::find_corners()
 {
 	cv::Size patternsize(20, 13);
 	std::vector<cv::Point2f> corners;
@@ -24,7 +38,7 @@ void CPE::ChessboardPoseEstimator::find_corners()
 	}
 }
 
-void CPE::ChessboardPoseEstimator::extract_feature_pnt_cld()
+void ChessboardPoseEstimator::extract_feature_pnt_cld()
 {
 	feature_pnt_cld_ = xt::zeros<float>(std::vector<size_t>{corner_array_.shape()[0], 3});
 	float coord_val{0.0};
@@ -51,20 +65,20 @@ void CPE::ChessboardPoseEstimator::extract_feature_pnt_cld()
 	}
 }
 
-xt::xarray<float> CPE::ChessboardPoseEstimator::estimate_pose()
+std::vector<float> ChessboardPoseEstimator::estimate_pose()
 {
 	board_pose_ = CPE::plane_fit(feature_pnt_cld_);
-	return board_pose_;
+	return as_ros_pose_msg(board_pose_);
 }
 
-void CPE::ChessboardPoseEstimator::show_img()
+void ChessboardPoseEstimator::show_img()
 {
 	cv::namedWindow("board");
 	cv::imshow("board", rgb_);
 	cv::waitKey(0);
 }
 
-xt::xarray<float> CPE::plane_fit(xt::xarray<float> feature_pnt_cld)
+xt::xarray<float> plane_fit(xt::xarray<float> feature_pnt_cld)
 {
 	auto centroid = xt::mean(feature_pnt_cld, 0);
 	auto svd_res = xt::linalg::svd(feature_pnt_cld - centroid);
@@ -86,7 +100,7 @@ xt::xarray<float> CPE::plane_fit(xt::xarray<float> feature_pnt_cld)
 	return pose;
 }
 
-cv::Mat CPE::generate_cv_img(Zivid::PointCloud point_cloud)
+cv::Mat generate_cv_img(Zivid::PointCloud point_cloud)
 {
 	xt::xarray<int> rgb{std::vector<size_t>{point_cloud.height(), point_cloud.width(), 3}};
 	for (size_t i = 0; i < point_cloud.height(); i++)
@@ -111,7 +125,7 @@ cv::Mat CPE::generate_cv_img(Zivid::PointCloud point_cloud)
 	return img;
 }
 
-xt::xarray<float> CPE::generate_xyz_xarray(Zivid::PointCloud point_cloud)
+xt::xarray<float> generate_xyz_xarray(Zivid::PointCloud point_cloud)
 {
 	xt::xarray<float> xyz{std::vector<size_t>{point_cloud.height(), point_cloud.width(), 3}};
 	for (size_t i = 0; i < point_cloud.height(); i++)
@@ -125,3 +139,16 @@ xt::xarray<float> CPE::generate_xyz_xarray(Zivid::PointCloud point_cloud)
 	}
 	return xyz;
 }
+
+std::vector<float> as_ros_pose_msg(xt::xarray<float> h)
+{
+	float x = h(0, 3);
+	float y = h(1, 3);
+	float z = h(2, 3);
+	float ox = 0.5 * std::signbit(h(2, 1) - h(1, 2)) * std::sqrt(h(0, 0) - h(1, 1) - h(2, 2) + 1);
+	float oy = 0.5 * std::signbit(h(0, 2) - h(2, 0)) * std::sqrt(h(1, 1) - h(2, 2) - h(0, 0) + 1);
+	float oz = 0.5 * std::signbit(h(1, 0) - h(0, 1)) * std::sqrt(h(2, 2) - h(0, 0) - h(1, 1) + 1);
+	float w = 0.5 * std::sqrt(h(0, 0) + h(1, 1) + h(2, 2) + 1);
+	return std::vector<float>({x, y, z, ox, oy, oz, w});
+}
+} //namespace CPE

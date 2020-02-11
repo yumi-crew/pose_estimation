@@ -1,4 +1,4 @@
-#include "chessboard_pose_estimator.h"
+#include "chessboard_pose_estimator.hpp"
 
 #include <Zivid/Zivid.h>
 #include <Zivid/CloudVisualizer.h>
@@ -19,8 +19,8 @@ int main()
 	pose_estimator.find_corners();
 	pose_estimator.extract_feature_pnt_cld();
 
-	xt::xarray<float> h = CPE::plane_fit(pose_estimator.feature_pnt_cld_); 
-
+	std::vector<float> h = pose_estimator.estimate_pose(); 
+	
 	pose_estimator.show_img();
 
 	return 0;

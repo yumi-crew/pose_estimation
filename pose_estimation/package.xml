@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <package format="3">
-  <name>chessboard_pose_estimator</name>
+  <name>pose_estimation</name>
   <version>1.0.0</version>
-  <description>Pose estimation for chessboards</description>
+  <description>Pose estimation</description>
   <maintainer email="markubjo@stud.ntnu.no">Markus Bjønnes</maintainer>
 
   <license>Apache License 2.0</license>
@@ -15,6 +15,13 @@
   <depend>Zivid</depend>
   <depend>OpenCV</depend>
   <depend>xtensor</depend>
+  <depend>rclcpp_components</depend>
+  <depend>rclcpp_lifecycle</depend>
+  <depend>sensor_msgs</depend>
+  <depend>std_msgs</depend>
+  <depend>builtin_interfaces</depend>
+  <depend>rosidl_default_generators</depend>
+  <depend>pose_estimation_interface</depend>
 
   <export>
     <build_type>ament_cmake</build_type>
