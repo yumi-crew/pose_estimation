@@ -5,7 +5,7 @@
 namespace CPE
 {
 ChessboardPoseEstimator::ChessboardPoseEstimator(cv::Mat img, xt::xarray<float> xyz)
-	: rgb_(img), xyz_(xyz)
+		: rgb_(img), xyz_(xyz)
 {
 }
 
@@ -17,10 +17,10 @@ ChessboardPoseEstimator::~ChessboardPoseEstimator()
 {
 }
 
-void ChessboardPoseEstimator::set_point_cloud(cv::Mat img, xt::xarray<float> xyz)
+void ChessboardPoseEstimator::set_point_cloud(xt::xarray<float> &xyz, xt::xarray<int> &rgb)
 {
 	xyz_ = xyz;
-	rgb_ = img;
+	rgb_ = convert_xarray_to_cv_mat(rgb);
 }
 
 void ChessboardPoseEstimator::find_corners()
@@ -100,7 +100,7 @@ xt::xarray<float> plane_fit(xt::xarray<float> feature_pnt_cld)
 	return pose;
 }
 
-cv::Mat generate_cv_img(Zivid::PointCloud point_cloud)
+cv::Mat generate_cv_img(Zivid::PointCloud &point_cloud)
 {
 	xt::xarray<int> rgb{std::vector<size_t>{point_cloud.height(), point_cloud.width(), 3}};
 	for (size_t i = 0; i < point_cloud.height(); i++)
@@ -125,7 +125,21 @@ cv::Mat generate_cv_img(Zivid::PointCloud point_cloud)
 	return img;
 }
 
-xt::xarray<float> generate_xyz_xarray(Zivid::PointCloud point_cloud)
+xt::xarray<int> generate_rgb_xarray(Zivid::PointCloud &point_cloud){
+	xt::xarray<int> rgb_xarray{std::vector<size_t>{point_cloud.height(), point_cloud.width(), 3}};
+	for (size_t i = 0; i < point_cloud.height(); i++)
+	{
+		for (size_t j = 0; j < point_cloud.width(); j++)
+		{
+			rgb_xarray(i, j, 0) = point_cloud(i, j).red();
+			rgb_xarray(i, j, 1) = point_cloud(i, j).green();
+			rgb_xarray(i, j, 2) = point_cloud(i, j).blue();
+		}
+	}
+	return rgb_xarray;
+}
+
+xt::xarray<float> generate_xyz_xarray(Zivid::PointCloud &point_cloud)
 {
 	xt::xarray<float> xyz{std::vector<size_t>{point_cloud.height(), point_cloud.width(), 3}};
 	for (size_t i = 0; i < point_cloud.height(); i++)
@@ -138,6 +152,21 @@ xt::xarray<float> generate_xyz_xarray(Zivid::PointCloud point_cloud)
 		}
 	}
 	return xyz;
+}
+
+cv::Mat convert_xarray_to_cv_mat(xt::xarray<int> &rgb_xarray)
+{
+	cv::Mat img{rgb_xarray.shape()[0], rgb_xarray.shape()[1], CV_8UC3};
+	for (int i = 0; i < img.rows; i++)
+	{
+		for (int j = 0; j < img.cols; j++)
+		{
+			img.at<cv::Vec3b>(i, j)[0] = rgb_xarray(i, j, 0);
+			img.at<cv::Vec3b>(i, j)[1] = rgb_xarray(i, j, 1);
+			img.at<cv::Vec3b>(i, j)[2] = rgb_xarray(i, j, 2);
+		}
+	}
+	return img;
 }
 
 std::vector<float> as_ros_pose_msg(xt::xarray<float> h)

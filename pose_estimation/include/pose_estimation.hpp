@@ -1,5 +1,6 @@
 #pragma once
 #include "chessboard_pose_estimator.hpp"
+#include <xtensor/xarray.hpp>
 
 #include <rclcpp/rclcpp.hpp>
 #include <rclcpp_lifecycle/lifecycle_node.hpp>
@@ -15,40 +16,45 @@ namespace pose_estimation
 class PoseEstimation : public rclcpp_lifecycle::LifecycleNode
 {
 public:
-    PoseEstimation(const rclcpp::NodeOptions &options);
+	PoseEstimation(const rclcpp::NodeOptions &options);
 
-    rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
-    on_configure(const rclcpp_lifecycle::State &state);
-    rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
-    on_activate(const rclcpp_lifecycle::State &state);
-    rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
-    on_deactivate(const rclcpp_lifecycle::State &state);
-    rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
-    on_cleanup(const rclcpp_lifecycle::State &state);
-    rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
-    on_shutdown(const rclcpp_lifecycle::State &state);
+	rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
+	on_configure(const rclcpp_lifecycle::State &state);
+	rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
+	on_activate(const rclcpp_lifecycle::State &state);
+	rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
+	on_deactivate(const rclcpp_lifecycle::State &state);
+	rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
+	on_cleanup(const rclcpp_lifecycle::State &state);
+	rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
+	on_shutdown(const rclcpp_lifecycle::State &state);
 
 private:
+	CPE::ChessboardPoseEstimator chessboard_pose_estimator;
+	void publish_pose();
+	rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::Pose>::SharedPtr object_pose_pub_;
 
-    CPE::ChessboardPoseEstimator chessboard_pose_estimator;
-    void publish_pose();
-    rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::Pose>::SharedPtr object_pose_pub_;
+	rclcpp::Service<pose_estimation_interface::srv::EstimatePose>::SharedPtr estimate_pose_service_;
+	void estimate_pose_service_handler(
+			const std::shared_ptr<rmw_request_id_t> request_header,
+			const std::shared_ptr<pose_estimation_interface::srv::EstimatePose::Request> request,
+			std::shared_ptr<pose_estimation_interface::srv::EstimatePose::Response> response);
 
-    rclcpp::Service<pose_estimation_interface::srv::EstimatePose>::SharedPtr estimate_pose_service_;
+	//rclcpp::Node::SharedPtr point_cloud_node_;
+	rclcpp_lifecycle::LifecycleNode::SharedPtr point_cloud_node_;
+	void point_cloud_sub_callback(const sensor_msgs::msg::PointCloud2::SharedPtr msg);
+	
 
-    void estimate_pose_service_handler(
-        const std::shared_ptr<rmw_request_id_t> request_header,
-        const std::shared_ptr<pose_estimation_interface::srv::EstimatePose::Request> request,
-        std::shared_ptr<pose_estimation_interface::srv::EstimatePose::Response> response);
 
-    void point_cloud_sub_callback(const sensor_msgs::msg::PointCloud2::SharedPtr msg);
-    rclcpp::Node::SharedPtr point_cloud_node_;
+	//point cloud stuff
+	sensor_msgs::msg::PointCloud2::SharedPtr point_cloud_;
+	void create_point_tensors(xt::xarray<float> &xyz, xt::xarray<int> &rgb);
 
-    sensor_msgs::msg::PointCloud2::SharedPtr point_cloud_;
+	xt::xarray<float> xyz_;
+	xt::xarray<int> rgb_;
 
-    //use for iterating over the point cloud, local in func later...
-    // sensor_msgs::PointCloud2ConstIterator<float*> point_cloud2_iter_xyz;
-    // sensor_msgs::PointCloud2ConstIterator<uint8_t*> point_clud2_iter_rgb;
 };
 
-} //namespace pose_estimator
+void spin(std::shared_ptr<rclcpp::executors::MultiThreadedExecutor> exe);
+
+} // namespace pose_estimation

@@ -10,12 +10,12 @@ int main()
 {
 	Zivid::Application zivid;
 	Zivid::Frame frame{"/home/markus/img01.zdf"};
-
 	Zivid::PointCloud point_cloud{frame.getPointCloud()};
 	xt::xarray<float> xyz = CPE::generate_xyz_xarray(point_cloud);
-	cv::Mat rgb = CPE::generate_cv_img(point_cloud);
+	xt::xarray<int> rgb = CPE::generate_rgb_xarray(point_cloud);
 
-	CPE::ChessboardPoseEstimator pose_estimator{rgb, xyz};
+	CPE::ChessboardPoseEstimator pose_estimator;
+	pose_estimator.set_point_cloud(xyz, rgb);
 	pose_estimator.find_corners();
 	pose_estimator.extract_feature_pnt_cld();
 
