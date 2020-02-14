@@ -31,7 +31,8 @@ public:
 
 private:
 	CPE::ChessboardPoseEstimator chessboard_pose_estimator;
-	void publish_pose();
+	void publish_pose(std::vector<float> &pose_estimate);
+	void estimate_pose(std::vector<float> &pose_estimate);
 	rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::Pose>::SharedPtr object_pose_pub_;
 
 	rclcpp::Service<pose_estimation_interface::srv::EstimatePose>::SharedPtr estimate_pose_service_;
@@ -52,6 +53,7 @@ private:
 
 	xt::xarray<float> xyz_;
 	xt::xarray<int> rgb_;
+	bool pose_estimation_success_;
 
 };
 

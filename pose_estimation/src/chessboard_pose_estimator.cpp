@@ -5,7 +5,7 @@
 namespace CPE
 {
 ChessboardPoseEstimator::ChessboardPoseEstimator(cv::Mat img, xt::xarray<float> xyz)
-		: rgb_(img), xyz_(xyz)
+	: rgb_(img), xyz_(xyz)
 {
 }
 
@@ -23,19 +23,22 @@ void ChessboardPoseEstimator::set_point_cloud(xt::xarray<float> &xyz, xt::xarray
 	rgb_ = std::move(convert_xarray_to_cv_mat(rgb));
 }
 
-void ChessboardPoseEstimator::find_corners()
+bool ChessboardPoseEstimator::find_corners(int nx, int ny)
 {
-	cv::Size patternsize(20, 13);
+	cv::Size patternsize(nx, ny);
 	std::vector<cv::Point2f> corners;
-	bool found = cv::findChessboardCorners(rgb_, patternsize, corners);
-	cv::drawChessboardCorners(rgb_, patternsize, cv::Mat(corners), found);
-
-	corner_array_ = xt::zeros<float>(std::vector<size_t>{corners.size(), 2});
-	for (size_t i = 0; i < corners.size(); i++)
+	found_corners_ = cv::findChessboardCorners(rgb_, patternsize, corners);
+	cv::drawChessboardCorners(rgb_, patternsize, cv::Mat(corners), found_corners_);
+	if (found_corners_)
 	{
-		corner_array_(i, 0) = corners[i].x;
-		corner_array_(i, 1) = corners[i].y;
+		corner_array_ = xt::zeros<float>(std::vector<size_t>{corners.size(), 2});
+		for (size_t i = 0; i < corners.size(); i++)
+		{
+			corner_array_(i, 0) = corners[i].x;
+			corner_array_(i, 1) = corners[i].y;
+		}
 	}
+	return found_corners_;
 }
 
 void ChessboardPoseEstimator::extract_feature_pnt_cld()
@@ -85,9 +88,27 @@ xt::xarray<float> plane_fit(xt::xarray<float> feature_pnt_cld)
 
 	auto V = std::get<2>(svd_res);
 
+	// ensure consistent direction of axes
+	xt::xarray<float> x_ctrl = (xt::view(feature_pnt_cld, 1, xt::all()) - xt::view(feature_pnt_cld, 0, xt::all())) / 
+		xt::linalg::norm(xt::view(feature_pnt_cld, 1, xt::all()) - xt::view(feature_pnt_cld, 0, xt::all()));
+
 	xt::xarray<float> x_vec = xt::view(V, 0, xt::all());
 	xt::xarray<float> y_vec = xt::view(V, 1, xt::all());
 	xt::xarray<float> z_vec = xt::view(V, 2, xt::all());
+
+	x_vec = x_vec / xt::linalg::norm(x_vec);
+	z_vec = z_vec / xt::linalg::norm(z_vec);
+
+	if (z_vec(2) > 0)
+	{
+		z_vec = -z_vec;
+	}
+	if (xt::any(xt::isclose(x_vec, -x_ctrl, 0.1)))
+	{
+		x_vec = -x_vec;
+	}
+
+	y_vec = xt::linalg::cross(z_vec, x_vec);
 
 	//create homogeneous transformation matrix to represent pose
 	xt::xarray<float> pose{xt::zeros<float>({4, 4})};
@@ -96,6 +117,8 @@ xt::xarray<float> plane_fit(xt::xarray<float> feature_pnt_cld)
 	xt::view(pose, xt::range(0, 3), 2) = z_vec;
 	xt::view(pose, xt::range(0, 3), 3) = centroid;
 	pose(3, 3) = 1.0;
+
+	auto det = xt::linalg::det(xt::view(pose, xt::range(0, 3), xt::range(0, 3)));
 	return pose;
 }
 
@@ -124,7 +147,8 @@ cv::Mat generate_cv_img(Zivid::PointCloud &point_cloud)
 	return img;
 }
 
-xt::xarray<int> generate_rgb_xarray(Zivid::PointCloud &point_cloud){
+xt::xarray<int> generate_rgb_xarray(Zivid::PointCloud &point_cloud)
+{
 	xt::xarray<int> rgb_xarray{std::vector<size_t>{point_cloud.height(), point_cloud.width(), 3}};
 	for (size_t i = 0; i < point_cloud.height(); i++)
 	{
@@ -170,6 +194,7 @@ cv::Mat convert_xarray_to_cv_mat(xt::xarray<int> &rgb_xarray)
 
 std::vector<float> as_ros_pose_msg(xt::xarray<float> h)
 {
+
 	float x = h(0, 3);
 	float y = h(1, 3);
 	float z = h(2, 3);

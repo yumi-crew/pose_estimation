@@ -16,7 +16,7 @@ int main()
 
 	CPE::ChessboardPoseEstimator pose_estimator;
 	pose_estimator.set_point_cloud(xyz, rgb);
-	pose_estimator.find_corners();
+	bool found = pose_estimator.find_corners(20, 13);
 	pose_estimator.extract_feature_pnt_cld();
 
 	std::vector<float> h = pose_estimator.estimate_pose(); 

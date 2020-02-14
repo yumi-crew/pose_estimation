@@ -13,21 +13,22 @@ namespace CPE
 {
 class ChessboardPoseEstimator
 {
-public:
+private:
 	xt::xarray<float> board_pose_;
 	cv::Mat rgb_;
 	xt::xarray<float> xyz_;
 	xt::xarray<float> corner_array_;
 	xt::xarray<float> feature_pnt_cld_;
+	bool found_corners_;
 
-
+public:
 	ChessboardPoseEstimator(cv::Mat img, xt::xarray<float> xyz);
 	ChessboardPoseEstimator();
 	~ChessboardPoseEstimator();
 
 	
 	std::vector<float> estimate_pose();
-	void find_corners();
+	bool find_corners(int nx, int ny);
 	void extract_feature_pnt_cld();
 	void show_img();
 	void set_point_cloud(xt::xarray<float> &xyz, xt::xarray<int> &rgb);
