@@ -15,16 +15,16 @@ PoseEstimation::on_configure(const rclcpp_lifecycle::State &state)
 {
 	//create services
 	estimate_pose_service_ = create_service<pose_estimation_interface::srv::EstimatePose>(
-			"estimate_pose", std::bind(&PoseEstimation::estimate_pose_service_handler, this, _1, _2, _3));
+		"estimate_pose", std::bind(&PoseEstimation::estimate_pose_service_handler, this, _1, _2, _3));
 
 	RCLCPP_INFO_STREAM(this->get_logger(), "hei_og_hopp");
 	//configure nodes for subs and pubs
-	point_cloud_node_("point_cloud_node");
-	point_cloud_node_->create_subscription<sensor_msgs::msg::PointCloud2>(
-			"points", 10, std::bind(&PoseEstimation::point_cloud_sub_callback, this, _1));
+	// point_cloud_node_("point_cloud_node");
+	// point_cloud_node_->create_subscription<sensor_msgs::msg::PointCloud2>(
+	// 		"points", 10, std::bind(&PoseEstimation::point_cloud_sub_callback, this, _1));
 	RCLCPP_INFO_STREAM(this->get_logger(), "hei_og_hopp");
-	//point_cloud_node_ = rclcpp::Node::make_shared("point_cloud_node");
-	// point_cloud_sub_ = point_cloud_node_->create_subscription<sensor_msgs::msg::PointCloud2>(
+	// point_cloud_node_ = rclcpp::Node::make_shared("point_cloud_node");
+	// auto point_cloud_sub_ = point_cloud_node_->create_subscription<sensor_msgs::msg::PointCloud2>(
 	// 		"points", 10, std::bind(&PoseEstimation::point_cloud_sub_callback, this, _1));
 
 	object_pose_pub_ = create_publisher<geometry_msgs::msg::Pose>("object_pose", 10);
@@ -35,15 +35,19 @@ PoseEstimation::on_configure(const rclcpp_lifecycle::State &state)
 rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
 PoseEstimation::on_activate(const rclcpp_lifecycle::State &state)
 {
-	point_cloud_node_->on_activate(state);
+
 	object_pose_pub_->on_activate();
+
+	point_cloud_sub_ = this->create_subscription<sensor_msgs::msg::PointCloud2>(
+		"points", 10, std::bind(&PoseEstimation::point_cloud_sub_callback, this, _1));
+
 	return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
 }
 
 rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
 PoseEstimation::on_deactivate(const rclcpp_lifecycle::State &state)
 {
-	point_cloud_node_->on_deactivate(state);
+	// point_cloud_node_->on_deactivate(state);
 	object_pose_pub_->on_deactivate();
 	return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
 }
@@ -61,9 +65,9 @@ PoseEstimation::on_shutdown(const rclcpp_lifecycle::State &state)
 }
 
 void PoseEstimation::estimate_pose_service_handler(
-		const std::shared_ptr<rmw_request_id_t> request_header,
-		const std::shared_ptr<pose_estimation_interface::srv::EstimatePose::Request> request,
-		std::shared_ptr<pose_estimation_interface::srv::EstimatePose::Response> response)
+	const std::shared_ptr<rmw_request_id_t> request_header,
+	const std::shared_ptr<pose_estimation_interface::srv::EstimatePose::Request> request,
+	std::shared_ptr<pose_estimation_interface::srv::EstimatePose::Response> response)
 {
 	publish_pose();
 }
@@ -76,12 +80,13 @@ void PoseEstimation::point_cloud_sub_callback(const sensor_msgs::msg::PointCloud
 
 void PoseEstimation::publish_pose()
 {
-	RCLCPP_INFO_STREAM(this->get_logger(), "hello from publish_pose");
 	create_point_tensors(xyz_, rgb_);
-	RCLCPP_INFO_STREAM(this->get_logger(), "created tensors");
 	// estimate pose
 	chessboard_pose_estimator.set_point_cloud(xyz_, rgb_);
-	std::vector pose_estimate = chessboard_pose_estimator.estimate_pose();
+	chessboard_pose_estimator.find_corners();
+	chessboard_pose_estimator.extract_feature_pnt_cld();
+	std::vector<float> pose_estimate = chessboard_pose_estimator.estimate_pose();
+	
 	//generate pose msg
 	geometry_msgs::msg::Pose pose;
 	pose.position.x = pose_estimate[0];
@@ -99,9 +104,14 @@ void PoseEstimation::create_point_tensors(xt::xarray<float> &xyz, xt::xarray<int
 {
 	RCLCPP_INFO_STREAM(this->get_logger(), "create tensors");
 
-	xyz.reshape({point_cloud_->height, point_cloud_->width, 3});
-	rgb.reshape({point_cloud_->height, point_cloud_->width, 3});
-	size_t n_points = point_cloud_->height * point_cloud_->width;
+	auto width = static_cast<int>(point_cloud_->width);
+	auto height = static_cast<int>(point_cloud_->height);
+
+	xyz = xt::zeros<float>({height, width, 3});
+	rgb = xt::zeros<int>({height, width, 3});
+
+	// xyz.resize({point_cloud_->height, point_cloud_->width, 3});
+	// rgb.resize({point_cloud_->height, point_cloud_->width, 3});
 
 	RCLCPP_INFO_STREAM(this->get_logger(), "reshape ok");
 
@@ -113,9 +123,9 @@ void PoseEstimation::create_point_tensors(xt::xarray<float> &xyz, xt::xarray<int
 	sensor_msgs::PointCloud2Iterator<int> iter_b(*point_cloud_, "b");
 	RCLCPP_INFO_STREAM(this->get_logger(), "created iterators");
 
-	for (size_t i = 0; i < point_cloud_->height; i++)
+	for (int i = 0; i < height; i++)
 	{
-		for (size_t j = 0; j < point_cloud_->width; j++, ++iter_x, ++iter_y, ++iter_z, ++iter_r, ++iter_g, ++iter_b)
+		for (int j = 0; j < width; j++, ++iter_x, ++iter_y, ++iter_z, ++iter_r, ++iter_g, ++iter_b)
 		{
 			xyz(i, j, 0) = *iter_x;
 			xyz(i, j, 1) = *iter_y;
@@ -125,11 +135,7 @@ void PoseEstimation::create_point_tensors(xt::xarray<float> &xyz, xt::xarray<int
 			rgb(i, j, 2) = *iter_b;
 		}
 	}
-}
-
-void spin(std::shared_ptr<rclcpp::executors::MultiThreadedExecutor> exe)
-{
-	exe->spin();
+	RCLCPP_INFO_STREAM(this->get_logger(), "point tensor ok");
 }
 
 } //namespace pose_estimation

@@ -19,8 +19,8 @@ ChessboardPoseEstimator::~ChessboardPoseEstimator()
 
 void ChessboardPoseEstimator::set_point_cloud(xt::xarray<float> &xyz, xt::xarray<int> &rgb)
 {
-	xyz_ = xyz;
-	rgb_ = convert_xarray_to_cv_mat(rgb);
+	xyz_ = std::move(xyz);
+	rgb_ = std::move(convert_xarray_to_cv_mat(rgb));
 }
 
 void ChessboardPoseEstimator::find_corners()
@@ -96,7 +96,6 @@ xt::xarray<float> plane_fit(xt::xarray<float> feature_pnt_cld)
 	xt::view(pose, xt::range(0, 3), 2) = z_vec;
 	xt::view(pose, xt::range(0, 3), 3) = centroid;
 	pose(3, 3) = 1.0;
-	std::cout << pose << std::endl;
 	return pose;
 }
 
@@ -180,4 +179,5 @@ std::vector<float> as_ros_pose_msg(xt::xarray<float> h)
 	float w = 0.5 * std::sqrt(h(0, 0) + h(1, 1) + h(2, 2) + 1);
 	return std::vector<float>({x, y, z, ox, oy, oz, w});
 }
+
 } //namespace CPE

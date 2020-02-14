@@ -40,8 +40,8 @@ private:
 			const std::shared_ptr<pose_estimation_interface::srv::EstimatePose::Request> request,
 			std::shared_ptr<pose_estimation_interface::srv::EstimatePose::Response> response);
 
-	//rclcpp::Node::SharedPtr point_cloud_node_;
-	rclcpp_lifecycle::LifecycleNode::SharedPtr point_cloud_node_;
+	rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr point_cloud_sub_;
+	// rclcpp_lifecycle::LifecycleNode::SharedPtr point_cloud_node_;
 	void point_cloud_sub_callback(const sensor_msgs::msg::PointCloud2::SharedPtr msg);
 	
 
@@ -54,7 +54,5 @@ private:
 	xt::xarray<int> rgb_;
 
 };
-
-void spin(std::shared_ptr<rclcpp::executors::MultiThreadedExecutor> exe);
 
 } // namespace pose_estimation
