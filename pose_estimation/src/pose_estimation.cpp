@@ -4,7 +4,9 @@ using namespace std::placeholders;
 
 namespace pose_estimation
 {
-PoseEstimation::PoseEstimation(const rclcpp::NodeOptions &options) : rclcpp_lifecycle::LifecycleNode("pose_estimation", options)
+PoseEstimation::PoseEstimation(const rclcpp::NodeOptions &options) : 
+	rclcpp_lifecycle::LifecycleNode("pose_estimation", options),
+	pose_estimation_success_{false}
 {
 	chessboard_pose_estimator = CPE::ChessboardPoseEstimator();
 }
@@ -17,7 +19,7 @@ PoseEstimation::on_configure(const rclcpp_lifecycle::State &state)
 		"estimate_pose", std::bind(&PoseEstimation::estimate_pose_service_handler, this, _1, _2, _3));
 
 	object_pose_pub_ = create_publisher<geometry_msgs::msg::Pose>("object_pose", 10);
-
+  RCLCPP_INFO_STREAM(get_logger(), "Configured.");
 	return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
 }
 
@@ -29,7 +31,7 @@ PoseEstimation::on_activate(const rclcpp_lifecycle::State &state)
 
 	point_cloud_sub_ = this->create_subscription<sensor_msgs::msg::PointCloud2>(
 		"points", 10, std::bind(&PoseEstimation::point_cloud_sub_callback, this, _1));
-
+  RCLCPP_INFO_STREAM(get_logger(), "Activated.");
 	return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
 }
 
@@ -37,6 +39,7 @@ rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
 PoseEstimation::on_deactivate(const rclcpp_lifecycle::State &state)
 {
 	object_pose_pub_->on_deactivate();
+  RCLCPP_INFO_STREAM(get_logger(), "Deactivated.");
 	return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
 }
 
@@ -49,6 +52,7 @@ PoseEstimation::on_cleanup(const rclcpp_lifecycle::State &state)
 rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
 PoseEstimation::on_shutdown(const rclcpp_lifecycle::State &state)
 {
+  RCLCPP_INFO_STREAM(get_logger(), "Shutdown.");
 	return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
 }
 
@@ -92,7 +96,6 @@ void PoseEstimation::estimate_pose(std::vector<float> &pose_estimate)
 	create_point_tensors(xyz_, rgb_);
 	// estimate pose
 	chessboard_pose_estimator.set_point_cloud(xyz_, rgb_);
-	pose_estimation_success_ = true;
 	pose_estimation_success_ = chessboard_pose_estimator.find_corners(8, 5);
 
 	if (pose_estimation_success_)

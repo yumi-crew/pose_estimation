@@ -34,11 +34,11 @@ ament_target_dependencies(chessboard_pose_estimator
                           LAPACK
                           )
 
-add_library(pose_estimation SHARED src/pose_estimation.cpp)
-target_include_directories(pose_estimation PRIVATE include)
-target_link_libraries(pose_estimation
+add_library(pose_estimation_library SHARED src/pose_estimation.cpp)
+target_include_directories(pose_estimation_library PRIVATE include)
+target_link_libraries(pose_estimation_library
                       chessboard_pose_estimator)
-ament_target_dependencies(pose_estimation
+ament_target_dependencies(pose_estimation_library
                           rclcpp_components
                           rclcpp_lifecycle
                           std_msgs
@@ -47,27 +47,11 @@ ament_target_dependencies(pose_estimation
                           pose_estimation_interface
                           xtensor
                           )
-rclcpp_components_register_node(pose_estimation
+rclcpp_components_register_node(pose_estimation_library
                           PLUGIN
                           "pose_estimation::PoseEstimation"
                           EXECUTABLE
-                          "pose_estimation_exec")
-
-# add_executable(pose_estimation src/pose_estimation.cpp)
-# target_include_directories(pose_estimation PRIVATE include)
-# target_link_libraries(pose_estimation 
-#                       chessboard_pose_estimator
-#                       Zivid::Core
-#                       Zivid::Vis3D
-#                       )
-# ament_target_dependencies(pose_estimation
-#                           rclcpp_components
-#                           rclcpp_lifecycle
-#                           std_msgs
-#                           sensor_msgs
-#                           geometry_msgs
-#                           pose_estimation_interface
-#                           )
+                          "pose_estimation")
 
 
 add_executable(test_script src/test_script.cpp)
@@ -87,7 +71,7 @@ install(DIRECTORY include/ DESTINATION include)
 
 install(TARGETS 
         chessboard_pose_estimator
-        pose_estimation
+        pose_estimation_library
         ARCHIVE DESTINATION lib
         LIBRARY DESTINATION lib
         RUNTIME DESTINATION bin)
