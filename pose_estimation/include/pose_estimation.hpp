@@ -54,6 +54,7 @@ private:
 	xt::xarray<float> xyz_;
 	xt::xarray<int> rgb_;
 	bool pose_estimation_success_;
+	bool pnt_cld_recieved_;
 
 };
 

@@ -4,9 +4,9 @@ using namespace std::placeholders;
 
 namespace pose_estimation
 {
-PoseEstimation::PoseEstimation(const rclcpp::NodeOptions &options) : 
-	rclcpp_lifecycle::LifecycleNode("pose_estimation", options),
-	pose_estimation_success_{false}
+PoseEstimation::PoseEstimation(const rclcpp::NodeOptions &options) : rclcpp_lifecycle::LifecycleNode("pose_estimation", options),
+																																		 pose_estimation_success_{false},
+																																		 pnt_cld_recieved_{false}
 {
 	chessboard_pose_estimator = CPE::ChessboardPoseEstimator();
 }
@@ -16,10 +16,10 @@ PoseEstimation::on_configure(const rclcpp_lifecycle::State &state)
 {
 	//create services
 	estimate_pose_service_ = create_service<pose_estimation_interface::srv::EstimatePose>(
-		"estimate_pose", std::bind(&PoseEstimation::estimate_pose_service_handler, this, _1, _2, _3));
+			"estimate_pose", std::bind(&PoseEstimation::estimate_pose_service_handler, this, _1, _2, _3));
 
 	object_pose_pub_ = create_publisher<geometry_msgs::msg::Pose>("object_pose", 10);
-  RCLCPP_INFO_STREAM(get_logger(), "Configured.");
+	RCLCPP_INFO_STREAM(get_logger(), "Configured.");
 	return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
 }
 
@@ -30,8 +30,8 @@ PoseEstimation::on_activate(const rclcpp_lifecycle::State &state)
 	object_pose_pub_->on_activate();
 
 	point_cloud_sub_ = this->create_subscription<sensor_msgs::msg::PointCloud2>(
-		"points", 10, std::bind(&PoseEstimation::point_cloud_sub_callback, this, _1));
-  RCLCPP_INFO_STREAM(get_logger(), "Activated.");
+			"points", 10, std::bind(&PoseEstimation::point_cloud_sub_callback, this, _1));
+	RCLCPP_INFO_STREAM(get_logger(), "Activated.");
 	return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
 }
 
@@ -39,7 +39,7 @@ rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
 PoseEstimation::on_deactivate(const rclcpp_lifecycle::State &state)
 {
 	object_pose_pub_->on_deactivate();
-  RCLCPP_INFO_STREAM(get_logger(), "Deactivated.");
+	RCLCPP_INFO_STREAM(get_logger(), "Deactivated.");
 	return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
 }
 
@@ -52,18 +52,20 @@ PoseEstimation::on_cleanup(const rclcpp_lifecycle::State &state)
 rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
 PoseEstimation::on_shutdown(const rclcpp_lifecycle::State &state)
 {
-  RCLCPP_INFO_STREAM(get_logger(), "Shutdown.");
+	RCLCPP_INFO_STREAM(get_logger(), "Shutdown.");
 	return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
 }
 
 void PoseEstimation::estimate_pose_service_handler(
-	const std::shared_ptr<rmw_request_id_t> request_header,
-	const std::shared_ptr<pose_estimation_interface::srv::EstimatePose::Request> request,
-	std::shared_ptr<pose_estimation_interface::srv::EstimatePose::Response> response)
+		const std::shared_ptr<rmw_request_id_t> request_header,
+		const std::shared_ptr<pose_estimation_interface::srv::EstimatePose::Request> request,
+		std::shared_ptr<pose_estimation_interface::srv::EstimatePose::Response> response)
 {
 	std::vector<float> pose_estimate;
 	pose_estimate.reserve(7);
-	estimate_pose(pose_estimate);
+	if(pnt_cld_recieved_){
+		estimate_pose(pose_estimate);
+	}
 	if (pose_estimation_success_)
 	{
 		publish_pose(pose_estimate);
@@ -74,6 +76,10 @@ void PoseEstimation::estimate_pose_service_handler(
 void PoseEstimation::point_cloud_sub_callback(const sensor_msgs::msg::PointCloud2::SharedPtr point_cloud_msg)
 {
 	point_cloud_ = point_cloud_msg;
+	if (!pnt_cld_recieved_)
+	{
+		pnt_cld_recieved_ = true;
+	}
 }
 
 void PoseEstimation::publish_pose(std::vector<float> &pose_estimate)
