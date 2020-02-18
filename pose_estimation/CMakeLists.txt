@@ -78,7 +78,12 @@ install(TARGETS
 
 install(TARGETS
         test_script
-        DESTINATION lib/${PROJECT_NAME})
+        DESTINATION lib/${PROJECT_NAME}
+        )
+
+install(DIRECTORY
+        launch
+        DESTINATION share/${PROJECT_NAME})
 
 ament_export_include_directories(include)
 ament_package()

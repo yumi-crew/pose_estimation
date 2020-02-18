@@ -1,12 +1,33 @@
 #include "object_pose_estimator.hpp"
 #include <unistd.h>
+#include <signal.h>
 
 using namespace std::chrono_literals;
 
+std::shared_ptr<ObjectPoseEstimator> pose_estimation_manager;
+
+void signal_callback_handler(int signum)
+{
+  std::cout << "Caught signal " << signum << std::endl;
+  pose_estimation_manager->change_state(
+      "zivid_camera", lifecycle_msgs::msg::Transition::TRANSITION_DEACTIVATE, 10s);
+  pose_estimation_manager->change_state(
+      "pose_estimation", lifecycle_msgs::msg::Transition::TRANSITION_DEACTIVATE, 10s);
+  pose_estimation_manager->change_state(
+      "zivid_camera", lifecycle_msgs::msg::Transition::TRANSITION_INACTIVE_SHUTDOWN, 10s);
+  pose_estimation_manager->change_state(
+      "pose_estimation", lifecycle_msgs::msg::Transition::TRANSITION_INACTIVE_SHUTDOWN, 10s);
+  rclcpp::shutdown();
+  exit(signum);
+}
+
 int main(int argc, char **argv)
 {
+  // Ctrl+C handler
+  signal(SIGINT, signal_callback_handler);
+
   rclcpp::init(argc, argv);
-  auto pose_estimation_manager = std::make_shared<ObjectPoseEstimator>("object_pose_estimator");
+  pose_estimation_manager = std::make_shared<ObjectPoseEstimator>("object_pose_estimator");
   pose_estimation_manager->init();
 
   rclcpp::executors::SingleThreadedExecutor exe;
@@ -35,8 +56,8 @@ int main(int argc, char **argv)
 
   while (rclcpp::ok)
   {
-    cap_success = pose_estimation_manager->call_capture_srv(3s);
-    est_success = pose_estimation_manager->call_estimate_pose_srv(3s);
+    cap_success = pose_estimation_manager->call_capture_srv(10s);
+    est_success = pose_estimation_manager->call_estimate_pose_srv(10s);
   }
 
   rclcpp::shutdown();

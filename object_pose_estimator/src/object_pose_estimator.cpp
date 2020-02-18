@@ -25,7 +25,7 @@ unsigned int ObjectPoseEstimator::get_state(std::string ls_node, std::chrono::se
   auto temp_node_client = temp_node->create_client<lifecycle_msgs::srv::GetState>(ls_node + "/get_state");
   auto request = std::make_shared<lifecycle_msgs::srv::GetState::Request>();
 
-  if (!temp_node_client->wait_for_service(time_out))
+  if (!temp_node_client->wait_for_service(10s))
   {
     RCLCPP_ERROR_STREAM(get_logger(), "Service " << temp_node_client->get_service_name() << " is unavailable.");
     return false;
@@ -60,7 +60,7 @@ bool ObjectPoseEstimator::change_state(std::string ls_node, std::uint8_t transit
   request->transition.id = transition;
   // std::shared_ptr<rclcpp::Client<lifecycle_msgs::srv::ChangeState>> client_change_state;
 
-  if (!temp_node_client->wait_for_service(time_out))
+  if (!temp_node_client->wait_for_service(10s))
   {
     RCLCPP_ERROR_STREAM(get_logger(), "Service " << temp_node_client->get_service_name() << " is unavailable.");
     return false;
@@ -93,7 +93,7 @@ bool ObjectPoseEstimator::call_capture_srv(std::chrono::seconds time_out = 5s)
   auto temp_node_client = temp_node->create_client<zivid_interfaces::srv::Capture>("/capture");
   auto request = std::make_shared<zivid_interfaces::srv::Capture::Request>();
 
-  if (!temp_node_client->wait_for_service(time_out))
+  if (!temp_node_client->wait_for_service(10s))
   {
     RCLCPP_ERROR_STREAM(get_logger(), "Service " << temp_node_client->get_service_name() << " is unavailable.");
     return false;
@@ -115,7 +115,7 @@ bool ObjectPoseEstimator::call_estimate_pose_srv(std::chrono::seconds time_out =
   auto temp_node_client = temp_node->create_client<pose_estimation_interface::srv::EstimatePose>("/estimate_pose");
   auto request = std::make_shared<pose_estimation_interface::srv::EstimatePose::Request>();
 
-  if (!temp_node_client->wait_for_service(time_out))
+  if (!temp_node_client->wait_for_service(10s))
   {
     RCLCPP_ERROR_STREAM(get_logger(), "Service " << temp_node_client->get_service_name() << " is unavailable.");
     return false;
