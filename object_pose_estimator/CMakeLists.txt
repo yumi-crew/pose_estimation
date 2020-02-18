@@ -26,18 +26,28 @@ ament_target_dependencies(object_pose_estimator
                           std_msgs
                           pose_estimation_interface
                           zivid_interfaces
-                          )                     
+                          )           
+                          
+add_library(pose_listener SHARED src/pose_listener.cpp)
+target_include_directories(pose_listener PRIVATE include)
+ament_target_dependencies(pose_listener
+                          rclcpp_components
+                          geometry_msgs
+                          )                          
 
 add_executable(object_pose_test src/object_pose_test.cpp)
 target_include_directories(object_pose_test PRIVATE include)
 target_link_libraries(object_pose_test
-                      object_pose_estimator)
+                      object_pose_estimator
+                      pose_listener
+                      )
 
                       
 install(DIRECTORY include/ DESTINATION include)
 
 install(TARGETS 
         object_pose_estimator
+        pose_listener
         ARCHIVE DESTINATION lib
         LIBRARY DESTINATION lib
         RUNTIME DESTINATION bin)
