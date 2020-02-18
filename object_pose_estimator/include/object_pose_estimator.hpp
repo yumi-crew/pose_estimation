@@ -35,15 +35,15 @@ public:
   unsigned int get_state(std::string ls_node, std::chrono::seconds time_out);
   bool change_state(std::string ls_node, std::uint8_t transition, std::chrono::seconds time_out);
 
+  bool call_capture_srv(std::chrono::seconds time_out);
+  bool call_estimate_pose_srv(std::chrono::seconds time_out);
+
 private:
   std::shared_ptr<rclcpp::Client<lifecycle_msgs::srv::GetState>> zc_get_state_;
   std::shared_ptr<rclcpp::Client<lifecycle_msgs::srv::GetState>> pe_get_state_;
   std::shared_ptr<rclcpp::Client<lifecycle_msgs::srv::ChangeState>> zc_change_state_;
   std::shared_ptr<rclcpp::Client<lifecycle_msgs::srv::ChangeState>> pe_change_state_;
+
+  std::shared_ptr<rclcpp::Client<zivid_interfaces::srv::Capture>> client_ze_capture_;
+  std::shared_ptr<rclcpp::Client<pose_estimation_interface::srv::EstimatePose>> client_pe_estimate_pose_;
 };
-
-
-template<typename FutureT, typename WaitTimeT> std::future_status
-wait_for_result(
-  FutureT & future,
-  WaitTimeT time_to_wait);

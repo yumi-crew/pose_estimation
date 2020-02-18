@@ -3,25 +3,6 @@
 
 using namespace std::chrono_literals;
 
-template <typename FutureT, typename WaitTimeT>
-std::future_status wait_for_result(FutureT &future, WaitTimeT time_to_wait)
-{
-  auto end = std::chrono::steady_clock::now() + time_to_wait;
-  std::chrono::milliseconds wait_period(100);
-  std::future_status status = std::future_status::timeout;
-  do
-  {
-    auto now = std::chrono::steady_clock::now();
-    auto time_left = end - now;
-    if (time_left <= std::chrono::seconds(0))
-    {
-      break;
-    }
-    status = future.wait_for((time_left < wait_period) ? time_left : wait_period);
-  } while (rclcpp::ok() && status != std::future_status::ready);
-  return status;
-}
-
 ObjectPoseEstimator::ObjectPoseEstimator(const std::string &node_name) : Node(node_name)
 {
 }
@@ -29,52 +10,38 @@ ObjectPoseEstimator::ObjectPoseEstimator(const std::string &node_name) : Node(no
 void ObjectPoseEstimator::init()
 {
   // might implement this functionality in the class constructor...
-  zc_get_state_ = this->create_client<lifecycle_msgs::srv::GetState>(zc_get_state_topic);
-  pe_get_state_ = this->create_client<lifecycle_msgs::srv::GetState>(pe_get_state_topic);
-  zc_change_state_ = this->create_client<lifecycle_msgs::srv::ChangeState>(zc_change_state_topic);
-  pe_change_state_ = this->create_client<lifecycle_msgs::srv::ChangeState>(pe_change_state_topic);
+  zc_get_state_ = this->create_client<lifecycle_msgs::srv::GetState>("/zivid_camera/get_state");
+  pe_get_state_ = this->create_client<lifecycle_msgs::srv::GetState>("/pose_estimation/get_state");
+  zc_change_state_ = this->create_client<lifecycle_msgs::srv::ChangeState>("/zivid_camera/change_state");
+  pe_change_state_ = this->create_client<lifecycle_msgs::srv::ChangeState>("/pose_estimation/change_state");
+
+  client_ze_capture_ = this->create_client<zivid_interfaces::srv::Capture>("/capture");
+  client_pe_estimate_pose_ = this->create_client<pose_estimation_interface::srv::EstimatePose>("/estimate_pose");
 }
 
 unsigned int ObjectPoseEstimator::get_state(std::string ls_node, std::chrono::seconds time_out = 3s)
 {
+  auto temp_node = std::make_unique<rclcpp::Node>("temp_node");
+  auto temp_node_client = temp_node->create_client<lifecycle_msgs::srv::GetState>(ls_node + "/get_state");
   auto request = std::make_shared<lifecycle_msgs::srv::GetState::Request>();
-  std::shared_ptr<rclcpp::Client<lifecycle_msgs::srv::GetState>> node_get_state;
 
-  if (!ls_node.compare("zivid_camera"))
+  if (!temp_node_client->wait_for_service(time_out))
   {
-    node_get_state = zc_get_state_;
+    RCLCPP_ERROR_STREAM(get_logger(), "Service " << temp_node_client->get_service_name() << " is unavailable.");
+    return false;
   }
-  else if (!ls_node.compare("pose_estimation"))
+  auto future_result = temp_node_client->async_send_request(request);
+  auto spin_status = rclcpp::spin_until_future_complete(temp_node->get_node_base_interface(), future_result, time_out);
+
+  if (spin_status != rclcpp::executor::FutureReturnCode::SUCCESS)
   {
-    node_get_state = pe_get_state_;
+    RCLCPP_ERROR_STREAM(get_logger(), "Service timout while getting state for " << ls_node);
+    return false;
   }
-  else
-  {
-    RCLCPP_ERROR_STREAM(get_logger(), "Which node's state?");
-    return lifecycle_msgs::msg::State::PRIMARY_STATE_UNKNOWN;
-  }
-
-  if (!node_get_state->wait_for_service(time_out))
-  {
-    RCLCPP_ERROR_STREAM(get_logger(), "Service" << node_get_state->get_service_name() << "is unavailable.");
-    return lifecycle_msgs::msg::State::PRIMARY_STATE_UNKNOWN;
-  }
-  auto future_result = node_get_state->async_send_request(request);
-  // auto future_status = wait_for_result(future_result, time_out);
-  
-  // if (future_status != std::future_status::ready)
-  // {
-  //   RCLCPP_ERROR_STREAM(get_logger(), "Time out while getting current state for node /" << ls_node);
-  //   return lifecycle_msgs::msg::State::PRIMARY_STATE_UNKNOWN;
-  // }
-
-
-  auto future_status = future_result.wait_for(3s);
-
-  if (true)
+  if (future_result.get())
   {
     RCLCPP_INFO_STREAM(get_logger(),
-                        "Node /" << ls_node << " has current state: " << future_result.get()->current_state.label.c_str());
+                       "Node /" << ls_node << " has current state: " << future_result.get()->current_state.label.c_str());
     return future_result.get()->current_state.id;
   }
   else
@@ -86,39 +53,29 @@ unsigned int ObjectPoseEstimator::get_state(std::string ls_node, std::chrono::se
 
 bool ObjectPoseEstimator::change_state(std::string ls_node, std::uint8_t transition, std::chrono::seconds time_out = 8s)
 {
+  auto temp_node = std::make_unique<rclcpp::Node>("temp_node");
+  auto temp_node_client = temp_node->create_client<lifecycle_msgs::srv::ChangeState>(ls_node + "/change_state");
+
   auto request = std::make_shared<lifecycle_msgs::srv::ChangeState::Request>();
   request->transition.id = transition;
-  std::shared_ptr<rclcpp::Client<lifecycle_msgs::srv::ChangeState>> node_change_state;
+  // std::shared_ptr<rclcpp::Client<lifecycle_msgs::srv::ChangeState>> client_change_state;
 
-  if (!ls_node.compare("zivid_camera"))
+  if (!temp_node_client->wait_for_service(time_out))
   {
-    node_change_state = zc_change_state_;
-  }
-  else if (!ls_node.compare("pose_estimation"))
-  {
-    node_change_state = pe_change_state_;
-  }
-  else
-  {
-    RCLCPP_ERROR_STREAM(get_logger(), "Change which node's state?");
-  }
-
-  if (!node_change_state->wait_for_service(time_out))
-  {
-    RCLCPP_ERROR_STREAM(get_logger(), "Service " << node_change_state->get_service_name() << " is unavailable.");
+    RCLCPP_ERROR_STREAM(get_logger(), "Service " << temp_node_client->get_service_name() << " is unavailable.");
     return false;
   }
 
-  auto future_result = node_change_state->async_send_request(request);
-  // auto future_status = wait_for_result(future_result, time_out);
-  auto future_status = future_result.wait_for(3s);
-  // if (future_status != std::future_status::ready)
-  // {
-  //   RCLCPP_ERROR_STREAM(get_logger(), "Service timout while changing state for " << ls_node);
-  //   return false;
-  // }
+  auto future_result = temp_node_client->async_send_request(request);
+  auto spin_status = rclcpp::spin_until_future_complete(temp_node->get_node_base_interface(), future_result, time_out);
 
-  if (true)
+  if (spin_status != rclcpp::executor::FutureReturnCode::SUCCESS)
+  {
+    RCLCPP_ERROR_STREAM(get_logger(), "Service timout while changing state for " << ls_node);
+    return false;
+  }
+
+  if (future_result.get()->success)
   {
     RCLCPP_INFO_STREAM(get_logger(), "Transition " << static_cast<int>(transition) << " successfully triggered.");
     return true;
@@ -128,4 +85,53 @@ bool ObjectPoseEstimator::change_state(std::string ls_node, std::uint8_t transit
     RCLCPP_WARN_STREAM(get_logger(), "Failed to trigger transition " << static_cast<unsigned int>(transition));
     return false;
   }
+}
+
+bool ObjectPoseEstimator::call_capture_srv(std::chrono::seconds time_out = 5s)
+{
+  auto temp_node = std::make_unique<rclcpp::Node>("temp_node");
+  auto temp_node_client = temp_node->create_client<zivid_interfaces::srv::Capture>("/capture");
+  auto request = std::make_shared<zivid_interfaces::srv::Capture::Request>();
+
+  if (!temp_node_client->wait_for_service(time_out))
+  {
+    RCLCPP_ERROR_STREAM(get_logger(), "Service " << temp_node_client->get_service_name() << " is unavailable.");
+    return false;
+  }
+  auto future_result = temp_node_client->async_send_request(request);
+  auto spin_status = rclcpp::spin_until_future_complete(temp_node->get_node_base_interface(), future_result, time_out);
+
+  if (spin_status != rclcpp::executor::FutureReturnCode::SUCCESS)
+  {
+    RCLCPP_ERROR_STREAM(get_logger(), "Service timout while capturing frame");
+    return false;
+  }
+  return true;
+}
+
+bool ObjectPoseEstimator::call_estimate_pose_srv(std::chrono::seconds time_out = 5s)
+{
+  auto temp_node = std::make_unique<rclcpp::Node>("temp_node");
+  auto temp_node_client = temp_node->create_client<pose_estimation_interface::srv::EstimatePose>("/estimate_pose");
+  auto request = std::make_shared<pose_estimation_interface::srv::EstimatePose::Request>();
+
+  if (!temp_node_client->wait_for_service(time_out))
+  {
+    RCLCPP_ERROR_STREAM(get_logger(), "Service " << temp_node_client->get_service_name() << " is unavailable.");
+    return false;
+  }
+
+  auto future_result = temp_node_client->async_send_request(request);
+  auto spin_status = rclcpp::spin_until_future_complete(temp_node->get_node_base_interface(), future_result, time_out);
+
+  if (spin_status != rclcpp::executor::FutureReturnCode::SUCCESS)
+  {
+    RCLCPP_ERROR_STREAM(get_logger(), "Service timout while estimating pose");
+    return false;
+  }
+  if (!future_result.get()->success)
+  {
+    return false;
+  }
+  return true;
 }
