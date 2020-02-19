@@ -17,7 +17,7 @@ PoseListener::PoseListener() : pose_msg_(std::vector<float>()) // : rclcpp::Node
 void PoseListener::pose_estimation_callback(const geometry_msgs::msg::Pose::SharedPtr msg)
 {
   pose_msg_.clear();
-  // pose_msg_.reserve(7);
+  pose_msg_.reserve(7);
 
   pose_msg_.push_back(msg->position.x);
   pose_msg_.push_back(msg->position.y);
