@@ -17,6 +17,7 @@ find_package(std_msgs REQUIRED)
 
 find_package(pose_estimation_interface REQUIRED)
 find_package(zivid_interfaces REQUIRED)
+find_package(Eigen3 REQUIRED)
 
 add_library(object_pose_estimator SHARED src/object_pose_estimator.cpp)
 target_include_directories(object_pose_estimator PRIVATE include)
@@ -33,6 +34,7 @@ target_include_directories(pose_listener PRIVATE include)
 ament_target_dependencies(pose_listener
                           rclcpp_components
                           geometry_msgs
+                          Eigen3
                           )                          
 
 add_executable(object_pose_test src/object_pose_test.cpp)
