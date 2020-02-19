@@ -68,7 +68,7 @@ int main(int argc, char **argv)
     // exe_pose.spin_some();
     if(est_success)
     {
-    auto grasp_pose = pose_listener->get_graspable_chessboard_bose((float)0.05);
+    auto grasp_pose = pose_listener->get_graspable_chessboard_bose((float)0.05, true);
     std::cout << std::endl;
     for (auto p : grasp_pose)
     {

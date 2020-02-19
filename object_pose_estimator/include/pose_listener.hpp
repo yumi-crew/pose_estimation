@@ -11,7 +11,7 @@ public:
   PoseListener();
 
   std::vector<float> get_pose_msg();
-  std::vector<float> get_graspable_chessboard_bose(float z_offset);
+  std::vector<float> get_graspable_chessboard_bose(float z_offset, bool Euler_angles);
   Eigen::Affine3f apply_he_calibration(Eigen::Affine3f);
 
 private:
