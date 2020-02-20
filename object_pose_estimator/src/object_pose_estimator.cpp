@@ -7,18 +7,6 @@ ObjectPoseEstimator::ObjectPoseEstimator(const std::string &node_name) : Node(no
 {
 }
 
-void ObjectPoseEstimator::init()
-{
-  // might implement this functionality in the class constructor...
-  zc_get_state_ = this->create_client<lifecycle_msgs::srv::GetState>("/zivid_camera/get_state");
-  pe_get_state_ = this->create_client<lifecycle_msgs::srv::GetState>("/pose_estimation/get_state");
-  zc_change_state_ = this->create_client<lifecycle_msgs::srv::ChangeState>("/zivid_camera/change_state");
-  pe_change_state_ = this->create_client<lifecycle_msgs::srv::ChangeState>("/pose_estimation/change_state");
-
-  client_ze_capture_ = this->create_client<zivid_interfaces::srv::Capture>("/capture");
-  client_pe_estimate_pose_ = this->create_client<pose_estimation_interface::srv::EstimatePose>("/estimate_pose");
-}
-
 unsigned int ObjectPoseEstimator::get_state(std::string ls_node, std::chrono::seconds time_out = 3s)
 {
   auto temp_node = std::make_unique<rclcpp::Node>("temp_node");

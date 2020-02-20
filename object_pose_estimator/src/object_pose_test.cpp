@@ -31,7 +31,6 @@ int main(int argc, char **argv)
 
   rclcpp::init(argc, argv);
   pose_estimation_manager = std::make_shared<ObjectPoseEstimator>("object_pose_estimator");
-  pose_estimation_manager->init();
 
   std::shared_ptr<PoseListener> pose_listener{std::make_shared<PoseListener>()};
 
@@ -68,7 +67,7 @@ int main(int argc, char **argv)
     // exe_pose.spin_some();
     if(est_success)
     {
-    auto grasp_pose = pose_listener->get_graspable_chessboard_bose((float)0.05, true);
+    auto grasp_pose = pose_listener->get_graspable_chessboard_pose((float)0.05, true);
     std::cout << std::endl;
     for (auto p : grasp_pose)
     {

@@ -59,4 +59,5 @@ install(TARGETS
         DESTINATION lib/${PROJECT_NAME})
 
 ament_export_include_directories(include)
+ament_export_libraries( object_pose_estimator pose_listener )
 ament_package()

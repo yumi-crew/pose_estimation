@@ -10,8 +10,8 @@ PoseListener::PoseListener() : pose_msg_(std::vector<float>()) // : rclcpp::Node
   // should probably be imported from a config file at some point
   // temperarey guess
   he_calibration_mat_ = Eigen::Affine3f{
-      Eigen::Translation3f{Eigen::Vector3f{0.100, -0.50, 0.100}} *
-      Eigen::AngleAxisf(M_PI_2, Eigen::Vector3f::UnitY()).toRotationMatrix()};
+      Eigen::Translation3f{Eigen::Vector3f{0.300, 0.0, 0.800}} *
+      Eigen::AngleAxisf(M_PI, Eigen::Vector3f::UnitY()).toRotationMatrix()};
 }
 
 void PoseListener::pose_estimation_callback(const geometry_msgs::msg::Pose::SharedPtr msg)
@@ -33,7 +33,7 @@ std::vector<float> PoseListener::get_pose_msg()
   return pose_msg_;
 }
 
-std::vector<float> PoseListener::get_graspable_chessboard_bose(float z_offset, bool Euler_angles)
+std::vector<float> PoseListener::get_graspable_chessboard_pose(float z_offset, bool Euler_angles)
 {
   rclcpp::spin_some(pose_node_);
 
@@ -53,11 +53,32 @@ std::vector<float> PoseListener::get_graspable_chessboard_bose(float z_offset, b
 
   Eigen::Quaternionf obj_in_base_quat{obj_in_base.rotation()};
   Eigen::Vector3f obj_in_base_t{obj_in_base.translation()};
+
+  // basic error handling
+  if (obj_in_base_t[2] < 0.0)
+  {
+    obj_in_base_t[2] = 0.1;
+  }
+
   if (Euler_angles)
   {
     auto eulerZYX = obj_in_base_quat.toRotationMatrix().eulerAngles(2, 1, 0);
+    //basic error handling
+    if (eulerZYX[0] < -M_PI)
+      eulerZYX[0] += 2 * M_PI;
+    else if (eulerZYX[0] > M_PI)
+      eulerZYX[0] -= 2 * M_PI;
+    if (eulerZYX[1] < -M_PI_2)
+      eulerZYX[1] += M_PI;
+    else if (eulerZYX[1]>M_PI_2)
+      eulerZYX[1] -= M_PI;
+    if (eulerZYX[2] < -M_PI)
+      eulerZYX[2] += 2 * M_PI;
+    else if (eulerZYX[2] > M_PI)
+      eulerZYX[2] -= 2 * M_PI;
+
     std::vector<float> pose_vec{
-        obj_in_base_t.x(), obj_in_base_t.y(), obj_in_base_t.z(), eulerZYX.x(), eulerZYX.y(), eulerZYX.z()};
+        obj_in_base_t.x(), obj_in_base_t.y(), obj_in_base_t.z(), eulerZYX[0], eulerZYX[1], eulerZYX[2]};
     return pose_vec;
   }
   else
@@ -71,4 +92,5 @@ std::vector<float> PoseListener::get_graspable_chessboard_bose(float z_offset, b
 Eigen::Affine3f PoseListener::apply_he_calibration(Eigen::Affine3f obj_in_cam)
 {
   return he_calibration_mat_ * obj_in_cam;
+  // return obj_in_cam;
 }

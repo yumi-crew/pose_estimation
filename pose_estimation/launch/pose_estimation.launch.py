@@ -26,24 +26,13 @@ def generate_launch_description():
                 node_name='zivid_camera',
             ),
             ComposableNode(
-              package='pose_estimation',
-              node_plugin='pose_estimation::PoseEstimation',
-              node_name='pose_estimation',
+                package='pose_estimation',
+                node_plugin='pose_estimation::PoseEstimation',
+                node_name='pose_estimation',
             ),
         ],
         output='screen',
     )
-
-    # pose_estimation_container = ComposableNodeContainer(
-    #   node_name='pose_estimation_container',
-    #   node_namespace='',
-    #   package='rclcpp_components',
-    #   node_executable='components_container'
-    #   composable_node_descriptions=[
-    #     ComposableNode(
-
-    #     )
-    #   ]
 
     return launch.LaunchDescription([
         container,
@@ -53,5 +42,4 @@ def generate_launch_description():
              arguments=['-d', rviz_config_dir],
              output='screen'
              )
-
     ])

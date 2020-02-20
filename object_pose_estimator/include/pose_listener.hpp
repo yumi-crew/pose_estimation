@@ -1,3 +1,4 @@
+#pragma once
 #include <rclcpp/rclcpp.hpp>
 #include <eigen3/Eigen/Geometry>
 #include <geometry_msgs/msg/pose.hpp>
@@ -11,7 +12,7 @@ public:
   PoseListener();
 
   std::vector<float> get_pose_msg();
-  std::vector<float> get_graspable_chessboard_bose(float z_offset, bool Euler_angles);
+  std::vector<float> get_graspable_chessboard_pose(float z_offset, bool Euler_angles);
   Eigen::Affine3f apply_he_calibration(Eigen::Affine3f);
 
 private:
