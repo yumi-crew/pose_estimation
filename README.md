@@ -7,3 +7,10 @@ cd /home/$USER/pose_estimation_ws/
 colcon build --symlink-install
 source install/local_setup.bash`
 ~~~~
+
+
+External dependencies:
+  -OpenCV
+  -Xtensor
+  -Xtensor-BLAS
+  -Eigen3
