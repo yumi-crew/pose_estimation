@@ -10,8 +10,7 @@ source install/local_setup.bash`
 
 
 External dependencies:
-
-  -Eigen3
+  - Eigen3
   ~~~~
   sudo apt isntall libeigen3-dev
   ~~~~
