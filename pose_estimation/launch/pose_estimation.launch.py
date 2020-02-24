@@ -20,11 +20,11 @@ def generate_launch_description():
         package='rclcpp_components',
         node_executable='component_container',
         composable_node_descriptions=[
-            ComposableNode(
-                package='zivid_camera',
-                node_plugin='zivid_camera::ZividCamera',
-                node_name='zivid_camera',
-            ),
+            # ComposableNode(
+            #     package='zivid_camera',
+            #     node_plugin='zivid_camera::ZividCamera',
+            #       node_name='zivid_camera',
+            # ),
             ComposableNode(
                 package='pose_estimation',
                 node_plugin='pose_estimation::PoseEstimation',
@@ -41,5 +41,8 @@ def generate_launch_description():
              node_name='rviz2',
              arguments=['-d', rviz_config_dir],
              output='screen'
-             )
+             ),
+        Node(package='zivid_camera',
+             node_executable='manual_composition',
+             output='screen')
     ])

@@ -16,9 +16,13 @@ void signal_callback_handler(int signum)
   pose_estimation_manager->change_state(
       "pose_estimation", lifecycle_msgs::msg::Transition::TRANSITION_DEACTIVATE, 10s);
   pose_estimation_manager->change_state(
-      "zivid_camera", lifecycle_msgs::msg::Transition::TRANSITION_INACTIVE_SHUTDOWN, 10s);
+      "zivid_camera", lifecycle_msgs::msg::Transition::TRANSITION_CLEANUP, 10s);
   pose_estimation_manager->change_state(
-      "pose_estimation", lifecycle_msgs::msg::Transition::TRANSITION_INACTIVE_SHUTDOWN, 10s);
+      "pose_estimation", lifecycle_msgs::msg::Transition::TRANSITION_CLEANUP, 10s);
+  // pose_estimation_manager->change_state(
+  //     "zivid_camera", lifecycle_msgs::msg::Transition::TRANSITION_INACTIVE_SHUTDOWN, 10s);
+  // pose_estimation_manager->change_state(
+  //     "pose_estimation", lifecycle_msgs::msg::Transition::TRANSITION_INACTIVE_SHUTDOWN, 10s);
 
   rclcpp::shutdown();
   exit(signum);
@@ -38,9 +42,13 @@ int main(int argc, char **argv)
   exe.add_node(pose_estimation_manager);
   // rclcpp::executors::SingleThreadedExecutor exe_pose;
   // exe_pose.add_node(pose_listener);
-  
+
   auto state1 = pose_estimation_manager->get_state("zivid_camera", 3s);
   auto state2 = pose_estimation_manager->get_state("pose_estimation", 3s);
+
+  // pose_estimation_manager->add_camera_parameter("zivid.camera.num_capture_frames", rclcpp::ParameterValue(4));
+  // pose_estimation_manager->call_set_param_srv(10s);
+  // pose_estimation_manager->clear_camera_parameters();
 
   auto transition_success1 = pose_estimation_manager->change_state(
       "zivid_camera", lifecycle_msgs::msg::Transition::TRANSITION_CONFIGURE, 5s);
@@ -49,6 +57,13 @@ int main(int argc, char **argv)
 
   auto state3 = pose_estimation_manager->get_state("zivid_camera", 3s);
   auto state4 = pose_estimation_manager->get_state("pose_estimation", 3s);
+
+  // after configure the camera parameters are available and the set_camera_paramters service can be called
+
+  pose_estimation_manager->add_camera_parameter("zivid_camera.capture.frame_0.iris", rclcpp::ParameterValue(17));
+  pose_estimation_manager->add_camera_parameter("zivid_camera.capture.frame_1.iris", rclcpp::ParameterValue(25));
+  pose_estimation_manager->add_camera_parameter("zivid_camera.capture.frame_2.iris", rclcpp::ParameterValue(30));
+  pose_estimation_manager->call_set_param_srv(10s);
 
   auto transition_success3 = pose_estimation_manager->change_state(
       "zivid_camera", lifecycle_msgs::msg::Transition::TRANSITION_ACTIVATE, 10s);
@@ -64,17 +79,15 @@ int main(int argc, char **argv)
   {
     cap_success = pose_estimation_manager->call_capture_srv(10s);
     est_success = pose_estimation_manager->call_estimate_pose_srv(10s);
-    // exe_pose.spin_some();
-    if(est_success)
+    if (est_success)
     {
-    auto grasp_pose = pose_listener->get_graspable_chessboard_pose((float)0.05, true);
-    std::cout << std::endl;
-    for (auto p : grasp_pose)
-    {
-      std::cout << p << std::endl;
-    }
+      auto grasp_pose = pose_listener->get_graspable_chessboard_pose((float)0.05, true);
+      std::cout << std::endl;
+      for (auto p : grasp_pose)
+      {
+        std::cout << p << std::endl;
+      }
     }
   }
-
   return 0;
 }

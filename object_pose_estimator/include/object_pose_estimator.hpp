@@ -9,6 +9,8 @@
 #include "lifecycle_msgs/srv/change_state.hpp"
 #include "lifecycle_msgs/srv/get_state.hpp"
 
+#include "rcl_interfaces/srv/set_parameters.hpp"
+
 #include "rclcpp/rclcpp.hpp"
 
 // zivid-ros, pose_estimation srvs
@@ -27,7 +29,12 @@ public:
 
   bool call_capture_srv(std::chrono::seconds time_out);
   bool call_estimate_pose_srv(std::chrono::seconds time_out);
+  bool call_set_param_srv(std::chrono::seconds time_out);
 
+  void add_camera_parameter(const std::string &name, const rclcpp::ParameterValue &value);
+  void clear_camera_parameters();
 private:
+
+  std::vector<rclcpp::Parameter> camera_parameters_;
 
 };

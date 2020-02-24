@@ -5,13 +5,14 @@ using namespace std::chrono_literals;
 
 ObjectPoseEstimator::ObjectPoseEstimator(const std::string &node_name) : Node(node_name)
 {
+  camera_parameters_ = std::vector<rclcpp::Parameter>();
 }
 
 unsigned int ObjectPoseEstimator::get_state(std::string ls_node, std::chrono::seconds time_out = 3s)
 {
-  auto temp_node = std::make_unique<rclcpp::Node>("temp_node");
-  auto temp_node_client = temp_node->create_client<lifecycle_msgs::srv::GetState>(ls_node + "/get_state");
-  auto request = std::make_shared<lifecycle_msgs::srv::GetState::Request>();
+  auto temp_node{std::make_unique<rclcpp::Node>("temp_node")};
+  auto temp_node_client{temp_node->create_client<lifecycle_msgs::srv::GetState>(ls_node + "/get_state")};
+  auto request{std::make_shared<lifecycle_msgs::srv::GetState::Request>()};
 
   if (!temp_node_client->wait_for_service(10s))
   {
@@ -41,10 +42,9 @@ unsigned int ObjectPoseEstimator::get_state(std::string ls_node, std::chrono::se
 
 bool ObjectPoseEstimator::change_state(std::string ls_node, std::uint8_t transition, std::chrono::seconds time_out = 8s)
 {
-  auto temp_node = std::make_unique<rclcpp::Node>("temp_node");
-  auto temp_node_client = temp_node->create_client<lifecycle_msgs::srv::ChangeState>(ls_node + "/change_state");
-
-  auto request = std::make_shared<lifecycle_msgs::srv::ChangeState::Request>();
+  auto temp_node{std::make_unique<rclcpp::Node>("temp_node")};
+  auto temp_node_client{temp_node->create_client<lifecycle_msgs::srv::ChangeState>(ls_node + "/change_state")};
+  auto request{std::make_shared<lifecycle_msgs::srv::ChangeState::Request>()};
   request->transition.id = transition;
   // std::shared_ptr<rclcpp::Client<lifecycle_msgs::srv::ChangeState>> client_change_state;
 
@@ -77,9 +77,9 @@ bool ObjectPoseEstimator::change_state(std::string ls_node, std::uint8_t transit
 
 bool ObjectPoseEstimator::call_capture_srv(std::chrono::seconds time_out = 5s)
 {
-  auto temp_node = std::make_unique<rclcpp::Node>("temp_node");
-  auto temp_node_client = temp_node->create_client<zivid_interfaces::srv::Capture>("/capture");
-  auto request = std::make_shared<zivid_interfaces::srv::Capture::Request>();
+  auto temp_node{std::make_unique<rclcpp::Node>("temp_node")};
+  auto temp_node_client{temp_node->create_client<zivid_interfaces::srv::Capture>("/capture")};
+  auto request{std::make_shared<zivid_interfaces::srv::Capture::Request>()};
 
   if (!temp_node_client->wait_for_service(10s))
   {
@@ -99,9 +99,9 @@ bool ObjectPoseEstimator::call_capture_srv(std::chrono::seconds time_out = 5s)
 
 bool ObjectPoseEstimator::call_estimate_pose_srv(std::chrono::seconds time_out = 5s)
 {
-  auto temp_node = std::make_unique<rclcpp::Node>("temp_node");
-  auto temp_node_client = temp_node->create_client<pose_estimation_interface::srv::EstimatePose>("/estimate_pose");
-  auto request = std::make_shared<pose_estimation_interface::srv::EstimatePose::Request>();
+  auto temp_node{std::make_unique<rclcpp::Node>("temp_node")};
+  auto temp_node_client{temp_node->create_client<pose_estimation_interface::srv::EstimatePose>("/estimate_pose")};
+  auto request{std::make_shared<pose_estimation_interface::srv::EstimatePose::Request>()};
 
   if (!temp_node_client->wait_for_service(10s))
   {
@@ -122,4 +122,44 @@ bool ObjectPoseEstimator::call_estimate_pose_srv(std::chrono::seconds time_out =
     return false;
   }
   return true;
+}
+
+bool ObjectPoseEstimator::call_set_param_srv(std::chrono::seconds time_out)
+{
+  auto temp_node{std::make_unique<rclcpp::Node>("temp_node")};
+  auto temp_node_client{temp_node->create_client<rcl_interfaces::srv::SetParameters>("zivid_parameter_server/set_parameters")};
+  auto request{std::make_shared<rcl_interfaces::srv::SetParameters::Request>()};
+
+  std::transform(camera_parameters_.begin(), camera_parameters_.end(), std::back_inserter(request->parameters),
+                 [](rclcpp::Parameter p) { return p.to_parameter_msg(); });
+
+  if (!temp_node_client->wait_for_service(10s))
+  {
+    RCLCPP_ERROR_STREAM(get_logger(), "Service " << temp_node_client->get_service_name() << " is unavailable.");
+    return false;
+  }
+
+  auto future_result = temp_node_client->async_send_request(request);
+  auto spin_status = rclcpp::spin_until_future_complete(temp_node->get_node_base_interface(), future_result, time_out);
+
+  if (spin_status != rclcpp::executor::FutureReturnCode::SUCCESS)
+  {
+    RCLCPP_ERROR_STREAM(get_logger(), "Service timout while setting camera parameters");
+    return false;
+  }
+  if (!future_result.get())
+  {
+    return false;
+  }
+  return true;
+}
+
+void ObjectPoseEstimator::add_camera_parameter(const std::string &name, const rclcpp::ParameterValue &value)
+{
+  camera_parameters_.emplace_back(rclcpp::Parameter(name, value));
+}
+
+void ObjectPoseEstimator::clear_camera_parameters()
+{
+  camera_parameters_.clear();
 }
