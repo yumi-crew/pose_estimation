@@ -91,7 +91,7 @@ xt::xarray<float> plane_fit(xt::xarray<float> feature_pnt_cld)
   // ensure consistent direction of axes
   xt::xarray<float> x_ctrl = (xt::view(feature_pnt_cld, 1, xt::all()) - xt::view(feature_pnt_cld, 0, xt::all())) /
                              xt::linalg::norm(xt::view(feature_pnt_cld, 1, xt::all()) - xt::view(feature_pnt_cld, 0, xt::all()));
-
+  x_ctrl = x_ctrl/xt::linalg::norm(x_ctrl);
   xt::xarray<float> x_vec = xt::view(V, 0, xt::all());
   xt::xarray<float> y_vec = xt::view(V, 1, xt::all());
   xt::xarray<float> z_vec = xt::view(V, 2, xt::all());
@@ -108,7 +108,10 @@ xt::xarray<float> plane_fit(xt::xarray<float> feature_pnt_cld)
     x_vec = -x_vec;
   }
 
+  // x_vec = x_ctrl;
   y_vec = xt::linalg::cross(z_vec, x_vec);
+
+
 
   //create homogeneous transformation matrix to represent pose
   xt::xarray<float> pose{xt::zeros<float>({4, 4})};
@@ -117,7 +120,7 @@ xt::xarray<float> plane_fit(xt::xarray<float> feature_pnt_cld)
   xt::view(pose, xt::range(0, 3), 2) = z_vec;
   xt::view(pose, xt::range(0, 3), 3) = centroid;
   pose(3, 3) = 1.0;
-
+  // std::cout << pose << std::endl;
   auto det = xt::linalg::det(xt::view(pose, xt::range(0, 3), xt::range(0, 3)));
   return pose;
 }

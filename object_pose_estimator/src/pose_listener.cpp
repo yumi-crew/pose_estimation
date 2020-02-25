@@ -43,39 +43,23 @@ std::vector<float> PoseListener::get_graspable_chessboard_pose(float z_offset, b
   pose_quat.z() = pose_msg_[5];
   pose_quat.w() = pose_msg_[6];
   pose_quat.normalize();
-  // std::cout << "Orientation from pose estimator:\n"
-  //           << pose_quat.toRotationMatrix() << std::endl;
+
   Eigen::Quaternionf transf_quat{Eigen::AngleAxisf(M_PI, Eigen::Vector3f::UnitX())};
-  // std::cout << "Rot to flip z-axis:\n"
-  //           << transf_quat.toRotationMatrix() << std::endl;
   Eigen::Quaternionf roatated_quat{pose_quat * transf_quat};
-  // std::cout << "Flipped z-axis:\n"
-  //           << roatated_quat.toRotationMatrix() << std::endl;
   // "graspable" pose in camera frame
   Eigen::Affine3f obj_in_cam{
       Eigen::Translation3f{Eigen::Vector3f{pose_msg_[0], pose_msg_[1], pose_msg_[2]}} * roatated_quat.toRotationMatrix()};
-  // std::cout << "Graspable pose in camera frame:\n"
-  //           << obj_in_cam.matrix() << std::endl;
+
   Eigen::Affine3f obj_in_base = apply_he_calibration(obj_in_cam);
-  // std::cout << "Graspable pose in base frame:\n"
-  //           << obj_in_base.matrix() << std::endl;
 
   Eigen::Vector3f obj_in_base_t{obj_in_base.translation()};
 
-  // basic error handling remove in real setup
-  if (obj_in_base_t[2] < 0.0)
-  {
-    obj_in_base_t[2] = 0.1;
-  }
-
   if (Euler_angles)
   {
-
     auto eulerZYX = obj_in_base.rotation().eulerAngles(2, 1, 0);
 
     std::vector<float>
-        pose_vec{
-            obj_in_base_t[0], obj_in_base_t[1], obj_in_base_t[2], eulerZYX[0], eulerZYX[1], eulerZYX[2]};
+        pose_vec{obj_in_base_t[0], obj_in_base_t[1], obj_in_base_t[2], eulerZYX[0], eulerZYX[1], eulerZYX[2]};
     return pose_vec;
   }
   else
