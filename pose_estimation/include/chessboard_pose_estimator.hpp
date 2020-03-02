@@ -1,4 +1,7 @@
 #pragma once
+#include <iostream>
+#include <math.h>
+#include <vector>
 
 #include <xtensor/xarray.hpp>
 #include <xtensor/xindex_view.hpp>

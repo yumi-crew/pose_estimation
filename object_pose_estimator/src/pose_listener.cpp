@@ -10,9 +10,8 @@ PoseListener::PoseListener() : pose_msg_(std::vector<float>()) // : rclcpp::Node
   // he_calib should probably be imported from a config file at some point
   // temperarey guess
   he_calibration_mat_ = Eigen::Affine3f{
-      Eigen::Translation3f{Eigen::Vector3f{0.300, 0.0, 0.800}} *
-      (Eigen::AngleAxisf(M_PI, Eigen::Vector3f::UnitY()).toRotationMatrix() *
-       Eigen::AngleAxisf(-M_PI_2, Eigen::Vector3f::UnitZ()).toRotationMatrix())};
+      Eigen::Translation3f{Eigen::Vector3f{0.18817, 0.062931, 0.6889065}} *
+      (Eigen::AngleAxisf(3.0516253, Eigen::Vector3f({-0.690238, 0.707627, -0.15111}))).toRotationMatrix()};
 }
 
 void PoseListener::pose_estimation_callback(const geometry_msgs::msg::Pose::SharedPtr msg)
