@@ -6,13 +6,13 @@
 #define _USE_MATH_DEFINES
 #include <cmath>
 
-class PoseListener  // : public rclcpp::Node
+class PoseTransformer  // : public rclcpp::Node
 {
 public:
-  PoseListener();
+  PoseTransformer();
 
   std::vector<float> get_pose_msg();
-  std::vector<float> get_graspable_chessboard_pose(float z_offset, bool Euler_angles);
+  std::vector<float> chessboard_pose_to_base_frame(float z_offset, bool Euler_angles);
   Eigen::Affine3f apply_he_calibration(Eigen::Affine3f);
 
 private:

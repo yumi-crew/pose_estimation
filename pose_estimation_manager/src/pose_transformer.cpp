@@ -1,20 +1,19 @@
-#include "pose_listener.hpp"
+#include "pose_transformer.hpp"
 
-PoseListener::PoseListener() : pose_msg_(std::vector<float>()) // : rclcpp::Node(node_name),
+PoseTransformer::PoseTransformer() : pose_msg_(std::vector<float>())
 
 {
   pose_node_ = std::make_shared<rclcpp::Node>("pose_node");
   pose_sub_ = pose_node_->create_subscription<geometry_msgs::msg::Pose>(
-      "object_pose", 10, std::bind(&PoseListener::pose_estimation_callback, this, std::placeholders::_1));
+      "object_pose", 10, std::bind(&PoseTransformer::pose_estimation_callback, this, std::placeholders::_1));
 
   // he_calib should probably be imported from a config file at some point
-  // temperarey guess
   he_calibration_mat_ = Eigen::Affine3f{
       Eigen::Translation3f{Eigen::Vector3f{0.18817, 0.062931, 0.6889065}} *
       (Eigen::AngleAxisf(3.0516253, Eigen::Vector3f({-0.690238, 0.707627, -0.15111}))).toRotationMatrix()};
 }
 
-void PoseListener::pose_estimation_callback(const geometry_msgs::msg::Pose::SharedPtr msg)
+void PoseTransformer::pose_estimation_callback(const geometry_msgs::msg::Pose::SharedPtr msg)
 {
   pose_msg_.clear();
   pose_msg_.reserve(7);
@@ -28,12 +27,12 @@ void PoseListener::pose_estimation_callback(const geometry_msgs::msg::Pose::Shar
   pose_msg_.push_back(msg->orientation.w);
 }
 
-std::vector<float> PoseListener::get_pose_msg()
+std::vector<float> PoseTransformer::get_pose_msg()
 {
   return pose_msg_;
 }
 
-std::vector<float> PoseListener::get_graspable_chessboard_pose(float z_offset, bool Euler_angles)
+std::vector<float> PoseTransformer::chessboard_pose_to_base_frame(float z_offset, bool Euler_angles)
 {
   rclcpp::spin_some(pose_node_);
 
@@ -71,7 +70,7 @@ std::vector<float> PoseListener::get_graspable_chessboard_pose(float z_offset, b
   }
 }
 
-Eigen::Affine3f PoseListener::apply_he_calibration(Eigen::Affine3f obj_in_cam)
+Eigen::Affine3f PoseTransformer::apply_he_calibration(Eigen::Affine3f obj_in_cam)
 {
   return he_calibration_mat_ * obj_in_cam;
 }

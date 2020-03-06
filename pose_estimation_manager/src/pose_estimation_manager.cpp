@@ -1,14 +1,17 @@
-#include "object_pose_estimator.hpp"
+#include "pose_estimation_manager.hpp"
 #include <unistd.h>
 
 using namespace std::chrono_literals;
 
-ObjectPoseEstimator::ObjectPoseEstimator(const std::string &node_name) : Node(node_name)
+PoseEstimationManager::PoseEstimationManager(const std::string &node_name)
+: 
+Node(node_name),
+pose_transformer{std::make_shared<PoseTransformer>()},
+camera_parameters_{std::vector<rclcpp::Parameter>()}
 {
-  camera_parameters_ = std::vector<rclcpp::Parameter>();
 }
 
-unsigned int ObjectPoseEstimator::get_state(std::string ls_node, std::chrono::seconds time_out = 3s)
+unsigned int PoseEstimationManager::get_state(std::string ls_node, std::chrono::seconds time_out = 3s)
 {
   auto temp_node{std::make_unique<rclcpp::Node>("temp_node")};
   auto temp_node_client{temp_node->create_client<lifecycle_msgs::srv::GetState>(ls_node + "/get_state")};
@@ -40,7 +43,7 @@ unsigned int ObjectPoseEstimator::get_state(std::string ls_node, std::chrono::se
   }
 }
 
-bool ObjectPoseEstimator::change_state(std::string ls_node, std::uint8_t transition, std::chrono::seconds time_out = 8s)
+bool PoseEstimationManager::change_state(std::string ls_node, std::uint8_t transition, std::chrono::seconds time_out = 8s)
 {
   auto temp_node{std::make_unique<rclcpp::Node>("temp_node")};
   auto temp_node_client{temp_node->create_client<lifecycle_msgs::srv::ChangeState>(ls_node + "/change_state")};
@@ -75,7 +78,7 @@ bool ObjectPoseEstimator::change_state(std::string ls_node, std::uint8_t transit
   }
 }
 
-bool ObjectPoseEstimator::call_capture_srv(std::chrono::seconds time_out = 5s)
+bool PoseEstimationManager::call_capture_srv(std::chrono::seconds time_out = 5s)
 {
   auto temp_node{std::make_unique<rclcpp::Node>("temp_node")};
   auto temp_node_client{temp_node->create_client<zivid_interfaces::srv::Capture>("/capture")};
@@ -97,7 +100,7 @@ bool ObjectPoseEstimator::call_capture_srv(std::chrono::seconds time_out = 5s)
   return true;
 }
 
-bool ObjectPoseEstimator::call_estimate_pose_srv(std::chrono::seconds time_out = 5s)
+bool PoseEstimationManager::call_estimate_pose_srv(std::chrono::seconds time_out = 5s)
 {
   auto temp_node{std::make_unique<rclcpp::Node>("temp_node")};
   auto temp_node_client{temp_node->create_client<pose_estimation_interface::srv::EstimatePose>("/estimate_pose")};
@@ -124,7 +127,7 @@ bool ObjectPoseEstimator::call_estimate_pose_srv(std::chrono::seconds time_out =
   return true;
 }
 
-bool ObjectPoseEstimator::call_set_param_srv(std::chrono::seconds time_out)
+bool PoseEstimationManager::call_set_param_srv(std::chrono::seconds time_out)
 {
   auto temp_node{std::make_unique<rclcpp::Node>("temp_node")};
   auto temp_node_client{temp_node->create_client<rcl_interfaces::srv::SetParameters>("zivid_parameter_server/set_parameters")};
@@ -154,12 +157,12 @@ bool ObjectPoseEstimator::call_set_param_srv(std::chrono::seconds time_out)
   return true;
 }
 
-void ObjectPoseEstimator::add_camera_parameter(const std::string &name, const rclcpp::ParameterValue &value)
+void PoseEstimationManager::add_camera_parameter(const std::string &name, const rclcpp::ParameterValue &value)
 {
   camera_parameters_.emplace_back(rclcpp::Parameter(name, value));
 }
 
-void ObjectPoseEstimator::clear_camera_parameters()
+void PoseEstimationManager::clear_camera_parameters()
 {
   camera_parameters_.clear();
 }

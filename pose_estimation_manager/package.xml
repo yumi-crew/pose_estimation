@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <package format="3">
-  <name>object_pose_estimator</name>
+  <name>pose_estimation_manager</name>
   <version>1.0.0</version>
   <description>Manager for lifecycle nodes used in object pose estimation</description>
   <maintainer email="markubjo@stud.ntnu.no">Markus Bjønnes</maintainer>

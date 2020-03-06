@@ -19,11 +19,12 @@
 #include "zivid_interfaces/srv/camera_info_model_name.hpp"
 #include "zivid_interfaces/srv/capture_assistant_suggest_settings.hpp"
 #include "zivid_interfaces/srv/is_connected.hpp"
+#include "pose_transformer.hpp"
 
-class ObjectPoseEstimator : public rclcpp::Node
+class PoseEstimationManager : public rclcpp::Node
 {
 public:
-  ObjectPoseEstimator(const std::string &node_name);
+  PoseEstimationManager(const std::string &node_name);
   unsigned int get_state(std::string ls_node, std::chrono::seconds time_out);
   bool change_state(std::string ls_node, std::uint8_t transition, std::chrono::seconds time_out);
 
@@ -33,6 +34,8 @@ public:
 
   void add_camera_parameter(const std::string &name, const rclcpp::ParameterValue &value);
   void clear_camera_parameters();
+
+  std::shared_ptr<PoseTransformer> pose_transformer;
 private:
 
   std::vector<rclcpp::Parameter> camera_parameters_;
