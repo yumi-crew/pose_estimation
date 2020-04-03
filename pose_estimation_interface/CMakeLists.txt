@@ -9,6 +9,7 @@ find_package(rosidl_default_generators REQUIRED)
 
 rosidl_generate_interfaces(pose_estimation_interface
                            "srv/EstimatePose.srv"
+                           "srv/InitSurfaceMatch.srv"
                            DEPENDENCIES
                            builtin_interfaces
                            geometry_msgs)

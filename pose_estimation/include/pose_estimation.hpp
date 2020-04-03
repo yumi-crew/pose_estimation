@@ -1,6 +1,9 @@
 #pragma once
 #include "chessboard_pose_estimator.hpp"
+#include "opencv_surface_match.hpp"
+
 #include <xtensor/xarray.hpp>
+#include <opencv2/core.hpp>
 
 #include <rclcpp/rclcpp.hpp>
 #include <rclcpp_lifecycle/lifecycle_node.hpp>
@@ -10,6 +13,7 @@
 #include <sensor_msgs/point_cloud2_iterator.hpp>
 
 #include <pose_estimation_interface/srv/estimate_pose.hpp>
+#include <pose_estimation_interface/srv/init_surface_match.hpp>
 
 namespace pose_estimation
 {
@@ -30,9 +34,10 @@ public:
 	on_shutdown(const rclcpp_lifecycle::State &state);
 
 private:
-	CPE::ChessboardPoseEstimator chessboard_pose_estimator;
+	ChessboardPoseEstimator chessboard_pose_estimator;
+	OpenCVSurfaceMatch surface_match;
 	void publish_pose(std::vector<float> &pose_estimate);
-	void estimate_pose(std::vector<float> &pose_estimate);
+	void estimate_pose(std::string object, std::vector<float> &pose_estimate);
 	rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::Pose>::SharedPtr object_pose_pub_;
 
 	rclcpp::Service<pose_estimation_interface::srv::EstimatePose>::SharedPtr estimate_pose_service_;
@@ -41,8 +46,12 @@ private:
 			const std::shared_ptr<pose_estimation_interface::srv::EstimatePose::Request> request,
 			std::shared_ptr<pose_estimation_interface::srv::EstimatePose::Response> response);
 
+	rclcpp::Service<pose_estimation_interface::srv::InitSurfaceMatch>::SharedPtr init_surface_match_service_;
+	void init_surface_match_service_handler(const std::shared_ptr<rmw_request_id_t> request_header,
+			const std::shared_ptr<pose_estimation_interface::srv::InitSurfaceMatch::Request> request,
+			std::shared_ptr<pose_estimation_interface::srv::InitSurfaceMatch::Response> response);
+			
 	rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr point_cloud_sub_;
-	// rclcpp_lifecycle::LifecycleNode::SharedPtr point_cloud_node_;
 	void point_cloud_sub_callback(const sensor_msgs::msg::PointCloud2::SharedPtr msg);
 	
 
@@ -50,6 +59,7 @@ private:
 	//point cloud stuff
 	sensor_msgs::msg::PointCloud2::SharedPtr point_cloud_;
 	void create_point_tensors(xt::xarray<float> &xyz, xt::xarray<int> &rgb);
+	cv::Mat create_cv_pc();
 
 	xt::xarray<float> xyz_;
 	xt::xarray<int> rgb_;
@@ -57,5 +67,4 @@ private:
 	bool pnt_cld_recieved_;
 
 };
-
-} // namespace pose_estimation
+} // namespace

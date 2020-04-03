@@ -34,10 +34,18 @@ ament_target_dependencies(chessboard_pose_estimator
                           LAPACK
                           )
 
+add_library(opencv_surface_match SHARED src/opencv_surface_match.cpp)
+target_include_directories(opencv_surface_match PRIVATE include)
+target_link_libraries(opencv_surface_match libstdc++fs.a) #<filesystem> library
+ament_target_dependencies(opencv_surface_match
+                          OpenCV
+                          )
+
 add_library(pose_estimation_library SHARED src/pose_estimation.cpp)
 target_include_directories(pose_estimation_library PRIVATE include)
 target_link_libraries(pose_estimation_library
-                      chessboard_pose_estimator)
+                      chessboard_pose_estimator
+                      opencv_surface_match)
 ament_target_dependencies(pose_estimation_library
                           rclcpp_components
                           rclcpp_lifecycle
@@ -46,6 +54,7 @@ ament_target_dependencies(pose_estimation_library
                           geometry_msgs
                           pose_estimation_interface
                           xtensor
+                          OpenCV
                           )
 rclcpp_components_register_node(pose_estimation_library
                           PLUGIN
@@ -57,6 +66,7 @@ rclcpp_components_register_node(pose_estimation_library
 add_executable(test_script src/test_script.cpp)
 target_include_directories(test_script PRIVATE include)
 target_link_libraries(test_script
+                      opencv_surface_match
                       chessboard_pose_estimator
                       Zivid::Core
                       Zivid::Vis3D

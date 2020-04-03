@@ -12,7 +12,7 @@
 #include <Zivid/Zivid.h>
 #include <opencv2/opencv.hpp>
 
-namespace CPE
+namespace pose_estimation
 {
 class ChessboardPoseEstimator
 {
@@ -46,4 +46,4 @@ cv::Mat generate_cv_img(Zivid::PointCloud &point_cloud);
 cv::Mat convert_xarray_to_cv_mat(xt::xarray<int> &rgb_xarray);
 std::vector<float> as_ros_pose_msg(xt::xarray<float> hom_pose_mat);
 
-} // namespace CPE
+} // namespace

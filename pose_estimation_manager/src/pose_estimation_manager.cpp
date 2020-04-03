@@ -4,10 +4,9 @@
 using namespace std::chrono_literals;
 
 PoseEstimationManager::PoseEstimationManager(const std::string &node_name)
-: 
-Node(node_name),
-pose_transformer{std::make_shared<PoseTransformer>()},
-camera_parameters_{std::vector<rclcpp::Parameter>()}
+    : Node(node_name),
+      pose_transformer{std::make_shared<PoseTransformer>()},
+      camera_parameters_{std::vector<rclcpp::Parameter>()}
 {
 }
 
@@ -100,11 +99,12 @@ bool PoseEstimationManager::call_capture_srv(std::chrono::seconds time_out = 5s)
   return true;
 }
 
-bool PoseEstimationManager::call_estimate_pose_srv(std::chrono::seconds time_out = 5s)
+bool PoseEstimationManager::call_estimate_pose_srv(std::string object, std::chrono::seconds time_out = 5s)
 {
   auto temp_node{std::make_unique<rclcpp::Node>("temp_node")};
   auto temp_node_client{temp_node->create_client<pose_estimation_interface::srv::EstimatePose>("/estimate_pose")};
   auto request{std::make_shared<pose_estimation_interface::srv::EstimatePose::Request>()};
+  request->object = object;
 
   if (!temp_node_client->wait_for_service(10s))
   {
@@ -118,6 +118,34 @@ bool PoseEstimationManager::call_estimate_pose_srv(std::chrono::seconds time_out
   if (spin_status != rclcpp::executor::FutureReturnCode::SUCCESS)
   {
     RCLCPP_ERROR_STREAM(get_logger(), "Service timout while estimating pose");
+    return false;
+  }
+  if (!future_result.get()->success)
+  {
+    return false;
+  }
+  return true;
+}
+
+bool PoseEstimationManager::call_init_surface_match_srv(std::string model_dir_path, std::chrono::seconds time_out)
+{
+  auto temp_node{std::make_unique<rclcpp::Node>("temp_node")};
+  auto temp_node_client{temp_node->create_client<pose_estimation_interface::srv::InitSurfaceMatch>("/init_surface_match")};
+  auto request{std::make_shared<pose_estimation_interface::srv::InitSurfaceMatch::Request>()};
+  request->model_dir_path = model_dir_path;
+
+  if (!temp_node_client->wait_for_service(10s))
+  {
+    RCLCPP_ERROR_STREAM(get_logger(), "Service " << temp_node_client->get_service_name() << " is unavailable.");
+    return false;
+  }
+
+  auto future_result = temp_node_client->async_send_request(request);
+  auto spin_status = rclcpp::spin_until_future_complete(temp_node->get_node_base_interface(), future_result, time_out);
+
+  if (spin_status != rclcpp::executor::FutureReturnCode::SUCCESS)
+  {
+    RCLCPP_ERROR_STREAM(get_logger(), "Service timout while initializig surface match");
     return false;
   }
   if (!future_result.get()->success)

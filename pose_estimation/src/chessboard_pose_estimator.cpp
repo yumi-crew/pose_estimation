@@ -1,6 +1,6 @@
 #include "chessboard_pose_estimator.hpp"
 
-namespace CPE
+namespace pose_estimation
 {
 ChessboardPoseEstimator::ChessboardPoseEstimator(cv::Mat img, xt::xarray<float> xyz)
     : rgb_(img), xyz_(xyz)
@@ -68,7 +68,7 @@ void ChessboardPoseEstimator::extract_feature_pnt_cld()
 
 std::vector<float> ChessboardPoseEstimator::estimate_pose()
 {
-  board_pose_ = CPE::plane_fit(feature_pnt_cld_);
+  board_pose_ = plane_fit(feature_pnt_cld_);
   return as_ros_pose_msg(board_pose_);
 }
 
@@ -206,4 +206,4 @@ std::vector<float> as_ros_pose_msg(xt::xarray<float> h)
   return std::vector<float>({x, y, z, ox, oy, oz, w});
 }
 
-} //namespace CPE
+} //namespace
