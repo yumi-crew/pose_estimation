@@ -1,7 +1,6 @@
 #include "pose_transformer.hpp"
 
 PoseTransformer::PoseTransformer() : pose_msg_(std::vector<float>())
-
 {
   pose_node_ = std::make_shared<rclcpp::Node>("pose_node");
   pose_sub_ = pose_node_->create_subscription<geometry_msgs::msg::Pose>(
@@ -68,6 +67,52 @@ std::vector<float> PoseTransformer::chessboard_pose_to_base_frame(float z_offset
         obj_in_base_t.x(), obj_in_base_t.y(), obj_in_base_t.z(), obj_in_base_quat.x(), obj_in_base_quat.y(), obj_in_base_quat.z(), obj_in_base_quat.w()};
     return pose_vec;
   }
+}
+
+std::vector<float> PoseTransformer::hover_pose()
+{
+  std::vector<float> hover_pose = obj_in_base_frame();
+  hover_pose[2] += 0.1; //apply offset
+  return hover_pose;
+}
+
+std::vector<float> PoseTransformer::obj_in_base_frame()
+{
+  rclcpp::spin_some(pose_node_);
+
+  Eigen::Quaternionf pose_quat;
+  pose_quat.x() = pose_msg_[3];
+  pose_quat.y() = pose_msg_[4];
+  pose_quat.z() = pose_msg_[5];
+  pose_quat.w() = pose_msg_[6];
+  pose_quat.normalize();
+
+  Eigen::Affine3f obj_in_cam{
+      Eigen::Translation3f{Eigen::Vector3f{pose_msg_[0], pose_msg_[1], pose_msg_[2]}} * pose_quat.toRotationMatrix()};
+
+  Eigen::Affine3f obj_in_base = apply_he_calibration(obj_in_cam);
+
+  Eigen::Vector3f y = obj_in_base.rotation().matrix().col(1);
+  Eigen::Vector3f z_base = {0.0, 0.0, -1.0};
+  Eigen::Vector3f z = z_base - ((z_base.dot(y)) / (y.dot(y))) * y;
+  Eigen::Vector3f x = y.cross(z);
+
+  Eigen::Matrix3f rot;
+  rot.col(0) = x.normalized();
+  rot.col(1) = y.normalized();
+  rot.col(2) = z.normalized();
+  obj_in_base.matrix().topLeftCorner<3, 3>() = rot;
+
+  std::cout << obj_in_base.matrix() << std::endl;
+  Eigen::Quaternionf obj_in_base_quat{obj_in_base.rotation()};
+  obj_in_base_quat.normalize();
+  Eigen::Vector3f obj_in_base_t{obj_in_base.translation()};
+
+  std::vector<float> pose_vec{
+      obj_in_base_t.x(), obj_in_base_t.y(), obj_in_base_t.z(), obj_in_base_quat.x(), obj_in_base_quat.y(), obj_in_base_quat.z(), obj_in_base_quat.w()};
+  // std::vector<float> pose_vec{
+  //     obj_in_base_t.x(), obj_in_base_t.y(), obj_in_base_t.z(), 1.0, 0.0, 0.0, 0.0};
+  return pose_vec;
 }
 
 Eigen::Affine3f PoseTransformer::apply_he_calibration(Eigen::Affine3f obj_in_cam)

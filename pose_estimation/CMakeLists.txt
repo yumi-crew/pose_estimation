@@ -23,6 +23,7 @@ find_package(xtl REQUIRED)
 find_package(xtensor REQUIRED)  
 find_package(BLAS REQUIRED) 
 find_package(LAPACK REQUIRED)
+find_package(PCL 1.10 REQUIRED)
 
 add_library(chessboard_pose_estimator SHARED src/chessboard_pose_estimator.cpp)
 target_include_directories(chessboard_pose_estimator PRIVATE include)
@@ -45,7 +46,8 @@ add_library(pose_estimation_library SHARED src/pose_estimation.cpp)
 target_include_directories(pose_estimation_library PRIVATE include)
 target_link_libraries(pose_estimation_library
                       chessboard_pose_estimator
-                      opencv_surface_match)
+                      opencv_surface_match
+                      ${PCL_LIBRARIES})
 ament_target_dependencies(pose_estimation_library
                           rclcpp_components
                           rclcpp_lifecycle
@@ -55,6 +57,7 @@ ament_target_dependencies(pose_estimation_library
                           pose_estimation_interface
                           xtensor
                           OpenCV
+                          PCL
                           )
 rclcpp_components_register_node(pose_estimation_library
                           PLUGIN

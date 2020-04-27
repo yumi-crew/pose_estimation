@@ -8,6 +8,7 @@
 #include <map>
 #include <iostream>
 #include <experimental/filesystem>
+#include <fstream>
 
 namespace pose_estimation{
 
@@ -26,6 +27,7 @@ class OpenCVSurfaceMatch
   // std::vector<cv::Mat> models_; //store pc of models to identify
   std::vector<std::string> model_names_;
   std::map<std::string, cv::Mat> models_;
+  std::string models_dir_path_;
   std::map<std::string, cv::ppf_match_3d::PPF3DDetector> detectors_; //detectors for each model, each key is the name of the model for the detector.
 };
 

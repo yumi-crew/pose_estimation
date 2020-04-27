@@ -2,6 +2,7 @@
 #include "chessboard_pose_estimator.hpp"
 #include "opencv_surface_match.hpp"
 
+#include <iostream>
 #include <xtensor/xarray.hpp>
 #include <opencv2/core.hpp>
 
@@ -14,6 +15,14 @@
 
 #include <pose_estimation_interface/srv/estimate_pose.hpp>
 #include <pose_estimation_interface/srv/init_surface_match.hpp>
+
+#include <pcl/io/io.h>
+#include <pcl/io/pcd_io.h>
+#include <pcl/ModelCoefficients.h>
+#include <pcl/filters/extract_indices.h>
+#include <pcl/filters/filter.h>
+#include <pcl/segmentation/sac_segmentation.h>
+#include <pcl/visualization/pcl_visualizer.h>
 
 namespace pose_estimation
 {

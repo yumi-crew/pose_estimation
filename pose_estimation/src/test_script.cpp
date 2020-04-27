@@ -39,12 +39,14 @@ int main()
 	// opencv surface_match test
 	std::string model_file_name = "/home/markus/opencv/opencv_contrib/modules/surface_matching/samples/data/parasaurolophus_6700.ply";
 	std::string scene_file_name = "/home/markus/opencv/opencv_contrib/modules/surface_matching/samples/data/rs1_normals.ply";
+	// std::string scene_file_name = "/home/markus/Documents/scenes_ply/scene_screwdriver_flashlight.ply";
 	cv::Mat pc_test = cv::ppf_match_3d::loadPLYSimple(scene_file_name.c_str(), 1);
+	std::cout << pc_test;
 	pose_estimation::OpenCVSurfaceMatch surface_match;
-	//surface_match.load_models_from_dir("/home/markus/opencv/opencv_contrib/modules/surface_matching/samples/data/");
-	surface_match.load_model(model_file_name, 1);
+	surface_match.load_models_from_dir("/home/markus/Documents/models_ply/");
+	// surface_match.load_model(model_file_name, 1);
 	surface_match.train_models();
-	std::vector<float> pose = surface_match.find_object_in_scene("parasaurolophus_6700", pc_test);
+	std::vector<float> pose = surface_match.find_object_in_scene("screwdriver", pc_test);
 	for(auto p:pose)
 		std::cout << p << std::endl;
 
