@@ -15,8 +15,10 @@ PoseEstimation::on_configure(const rclcpp_lifecycle::State &state)
   //create services
   estimate_pose_service_ = create_service<pose_estimation_interface::srv::EstimatePose>(
       "estimate_pose", std::bind(&PoseEstimation::estimate_pose_service_handler, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
-  init_surface_match_service_ = create_service<pose_estimation_interface::srv::InitSurfaceMatch>(
-      "init_surface_match", std::bind(&PoseEstimation::init_surface_match_service_handler, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+  init_cv_surface_match_service_ = create_service<pose_estimation_interface::srv::InitCvSurfaceMatch>(
+      "init_cv_surface_match", std::bind(&PoseEstimation::init_cv_surface_match_service_handler, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+  init_halcon_surface_match_service_ = create_service<pose_estimation_interface::srv::InitHalconSurfaceMatch>(
+      "init_halcon_surface_match", std::bind(&PoseEstimation::init_halcon_surface_match_service_handler, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 
   object_pose_pub_ = create_publisher<geometry_msgs::msg::Pose>("object_pose", 10);
   RCLCPP_INFO_STREAM(get_logger(), "Configured.");
@@ -75,14 +77,25 @@ void PoseEstimation::estimate_pose_service_handler(
   pose_estimation_success_ = false;
 }
 
-void PoseEstimation::init_surface_match_service_handler(
+void PoseEstimation::init_cv_surface_match_service_handler(
     const std::shared_ptr<rmw_request_id_t> request_header,
-    const std::shared_ptr<pose_estimation_interface::srv::InitSurfaceMatch::Request> request,
-    std::shared_ptr<pose_estimation_interface::srv::InitSurfaceMatch::Response> response)
+    const std::shared_ptr<pose_estimation_interface::srv::InitCvSurfaceMatch::Request> request,
+    std::shared_ptr<pose_estimation_interface::srv::InitCvSurfaceMatch::Response> response)
 {
-  surface_match.load_models_from_dir(request->model_dir_path);
-  surface_match.train_models();
+  cv_surface_match.load_models_from_dir(request->model_dir_path);
+  cv_surface_match.train_models();
   response->success = true;
+  use_halcon_match = false;
+}
+
+void PoseEstimation::init_halcon_surface_match_service_handler(
+     const std::shared_ptr<rmw_request_id_t> request_header,
+    const std::shared_ptr<pose_estimation_interface::srv::InitHalconSurfaceMatch::Request> request,
+    std::shared_ptr<pose_estimation_interface::srv::InitHalconSurfaceMatch::Response> response)
+{
+  halcon_surface_match.load_models(request->model_dir_path);
+  response->success = true;
+  use_halcon_match = true;
 }
 
 void PoseEstimation::point_cloud_sub_callback(const sensor_msgs::msg::PointCloud2::SharedPtr point_cloud_msg)
@@ -124,10 +137,17 @@ void PoseEstimation::estimate_pose(std::string object, std::vector<float> &pose_
       pose_estimate = chessboard_pose_estimator.estimate_pose();
     }
   }
+  else if(use_halcon_match)
+  {
+    create_cv_pc();
+    halcon_surface_match.update_current_scene();
+    pose_estimate = halcon_surface_match.find_object_in_scene(object);
+    pose_estimation_success_ = true;
+  }
   else
   {
     cv::Mat pc = create_cv_pc();
-    pose_estimate = surface_match.find_object_in_scene(object, pc);
+    pose_estimate = cv_surface_match.find_object_in_scene(object, pc);
     pose_estimation_success_ = true;
   }
 }
@@ -198,7 +218,6 @@ cv::Mat PoseEstimation::create_cv_pc()
   std::vector<int> idx;
   pcl::removeNaNFromPointCloud(*cloud, *cloud, idx);
 
-  
   seg.setModelType(pcl::SACMODEL_PLANE);
   seg.setMethodType(pcl::SAC_RANSAC);
   seg.setOptimizeCoefficients(true);
@@ -211,7 +230,6 @@ cv::Mat PoseEstimation::create_cv_pc()
   {
     PCL_ERROR("Could not estimate a planar model for the given dataset.\n");
   }
-
 
   std::cout << "plane coefficients " << coefficients->values[0] << " "
             << coefficients->values[1] << " "
@@ -241,6 +259,8 @@ cv::Mat PoseEstimation::create_cv_pc()
   extract.filter(*inliers);
   extract.setNegative(true);
   extract.filter(*outliers); //outliers now contains the points not on the ground plane
+
+  pcl::io::savePLYFileASCII("current_scene.ply", *outliers);
 
   // Visualization
   // pcl::visualization::PCLVisualizer viewer("PCL visualizer");

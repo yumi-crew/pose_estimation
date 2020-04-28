@@ -15,7 +15,8 @@
 
 // zivid-ros, pose_estimation srvs
 #include "pose_estimation_interface/srv/estimate_pose.hpp"
-#include "pose_estimation_interface/srv/init_surface_match.hpp"
+#include "pose_estimation_interface/srv/init_cv_surface_match.hpp"
+#include "pose_estimation_interface/srv/init_halcon_surface_match.hpp"
 #include "zivid_interfaces/srv/capture.hpp"
 #include "zivid_interfaces/srv/camera_info_model_name.hpp"
 #include "zivid_interfaces/srv/capture_assistant_suggest_settings.hpp"
@@ -31,7 +32,8 @@ public:
 
   bool call_capture_srv(std::chrono::seconds time_out);
   bool call_estimate_pose_srv(std::string object, std::chrono::seconds time_out);
-  bool call_init_surface_match_srv(std::string model_dir_path, std::chrono::seconds time_out);
+  bool call_init_cv_surface_match_srv(std::string model_dir_path, std::chrono::seconds time_out);
+  bool call_init_halcon_surface_match_srv(std::string model_dir_path, std::chrono::seconds time_out);
   bool call_set_param_srv(std::chrono::seconds time_out);
 
   void add_camera_parameter(const std::string &name, const rclcpp::ParameterValue &value);

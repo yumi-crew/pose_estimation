@@ -34,7 +34,6 @@ void OpenCVSurfaceMatch::load_models_from_dir(std::string models_dir_path)
   }
 }
 
-//todo: if trained model already exists deserialize it instead of training a new model. If it does not train model and save for later.
 void OpenCVSurfaceMatch::train_models()
 {
   int64 tick1, tick2;
@@ -49,52 +48,6 @@ void OpenCVSurfaceMatch::train_models()
               << (double)(tick2 - tick1) / cv::getTickFrequency()
               << " sec" << std::endl;
   }
-  // for (uint i = 0; i < model_names_.size(); ++i)
-  // {
-  //   std::string trained_model_file_name = models_dir_path_ + "/" + model_names_[i] + ".xml";
-  //   std::ifstream trained_model_file(trained_model_file_name);
-  //   if (!trained_model_file.good())
-  //   {
-  //     std::cout << "Training model: " << model_names_[i] << std::endl;
-  //     tick1 = cv::getTickCount();
-  //     detectors_[model_names_[i]] = cv::ppf_match_3d::PPF3DDetector(0.05, 0.05, 30); //tune params later
-  //     detectors_[model_names_[i]].trainModel(models_[model_names_[i]]);
-  //     tick2 = cv::getTickCount();
-  //     std::cout << "Training complete in "
-  //               << (double)(tick2 - tick1) / cv::getTickFrequency()
-  //               << " sec" << std::endl;
-  //     std::cout << "Saving trained model" << std::endl;
-  //     tick1 = cv::getTickCount();
-  //     cv::FileStorage fs_out(trained_model_file_name, cv::FileStorage::WRITE);
-  //     detectors_[model_names_[i]].write(fs_out);
-  //     fs_out.release();
-  //     tick2 = cv::getTickCount();
-  //     std::cout << "Model saved in "
-  //               << (double)(tick2 - tick1) / cv::getTickFrequency()
-  //               << " sec" << std::endl;
-  //   }
-  //   else
-  //   {
-  //     trained_model_file.close();
-  //     std::cout << "Found pretrained model for " << model_names_[i] << std::endl;
-  //     tick1 = cv::getTickCount();
-  //     cv::FileStorage fs_load(trained_model_file_name, cv::FileStorage::READ);
-  //     std::cout << "filestorage ok" << std::endl;
-  //     // cv::ppf_match_3d::PPF3DDetector det;
-  //     // det.read(fs_load.root());
-  //     detectors_[model_names_[i]] = cv::ppf_match_3d::PPF3DDetector();
-  //     std::cout << "detector init" << std::endl;
-  //     detectors_[model_names_[i]].read(fs_load.root());
-  //     std::cout << "after read" << std::endl;
-  //     fs_load.release();
-  //     // detectors_[model_names_[i]] = det;
-  //     tick2 = cv::getTickCount();
-  //     std::cout << "Loaded pretrained model for "
-  //               << model_names_[i] << " in "
-  //               << (double)(tick2 - tick1) / cv::getTickFrequency()
-  //               << " sec" << std::endl;
-  //   }
-  // }
 }
 
 std::vector<float> OpenCVSurfaceMatch::find_object_in_scene(std::string object, cv::Mat &pc_scene)
@@ -109,7 +62,7 @@ std::vector<float> OpenCVSurfaceMatch::find_object_in_scene(std::string object, 
     int64 tick1 = cv::getTickCount();
     std::vector<cv::ppf_match_3d::Pose3DPtr> results;
     std::cout << "before match\n";
-    detectors_[object].match(pc_scene_normals, results, 1.0 / 1.0, 0.025);
+    detectors_[object].match(pc_scene_normals, results, 1.0, 0.03);
     std::cout << "before icp\n";
     for (int i = 0; i < results.size(); ++i)
     {

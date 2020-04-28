@@ -8,6 +8,16 @@ endif()
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
+set(
+    CMAKE_MODULE_PATH 
+    ${CMAKE_MODULE_PATH} 
+    ${CMAKE_CURRENT_SOURCE_DIR}
+)
+if(DEFINED ENV{HALCONROOT} AND NOT $ENV{HALCONROOT} STREQUAL "")
+  message("Using HALCONROOT " $ENV{HALCONROOT})
+  STRING(REGEX REPLACE "\\\\" "/" HALCONROOT $ENV{HALCONROOT}) 
+endif()
+
 
 find_package(ament_cmake REQUIRED)
 find_package(sensor_msgs REQUIRED)
@@ -24,6 +34,10 @@ find_package(xtensor REQUIRED)
 find_package(BLAS REQUIRED) 
 find_package(LAPACK REQUIRED)
 find_package(PCL 1.10 REQUIRED)
+find_package(Halcon 18.11 REQUIRED)
+
+message(${HALCON_INC_DIRS} " " ${HALCON_LIBS})
+
 
 add_library(chessboard_pose_estimator SHARED src/chessboard_pose_estimator.cpp)
 target_include_directories(chessboard_pose_estimator PRIVATE include)
@@ -42,12 +56,29 @@ ament_target_dependencies(opencv_surface_match
                           OpenCV
                           )
 
+add_library(halcon_surface_match SHARED src/halcon_surface_match.cpp)
+target_include_directories(halcon_surface_match PUBLIC 
+                          include
+                          ${HALCON_INC_DIRS}                         
+                          )
+target_link_libraries(halcon_surface_match 
+                        libstdc++fs.a
+                        ${HALCON_LIBS}
+                        )
+
+          
+
+
 add_library(pose_estimation_library SHARED src/pose_estimation.cpp)
-target_include_directories(pose_estimation_library PRIVATE include)
+target_include_directories(pose_estimation_library PUBLIC 
+                          include
+                          )
 target_link_libraries(pose_estimation_library
                       chessboard_pose_estimator
                       opencv_surface_match
-                      ${PCL_LIBRARIES})
+                      halcon_surface_match
+                      ${PCL_LIBRARIES}
+                      )
 ament_target_dependencies(pose_estimation_library
                           rclcpp_components
                           rclcpp_lifecycle
@@ -70,6 +101,7 @@ add_executable(test_script src/test_script.cpp)
 target_include_directories(test_script PRIVATE include)
 target_link_libraries(test_script
                       opencv_surface_match
+                      halcon_surface_match
                       chessboard_pose_estimator
                       Zivid::Core
                       Zivid::Vis3D
@@ -77,6 +109,7 @@ target_link_libraries(test_script
                       ${OpenCV_LIBS}
                       ${BLAS_LIBRARIES}
                       ${LAPACK_LIBRARIES}
+                      ${HALCON_LIBS}
                       )
 
 
