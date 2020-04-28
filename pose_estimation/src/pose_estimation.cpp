@@ -1,4 +1,5 @@
 #include <pose_estimation.hpp>
+#include <time.h>
 
 namespace pose_estimation
 {
@@ -124,6 +125,7 @@ void PoseEstimation::publish_pose(std::vector<float> &pose_estimate)
 
 void PoseEstimation::estimate_pose(std::string object, std::vector<float> &pose_estimate)
 {
+  clock_t t = clock(); 
   if (object.compare("chessboard") == 0)
   {
     create_point_tensors(xyz_, rgb_);
@@ -150,6 +152,8 @@ void PoseEstimation::estimate_pose(std::string object, std::vector<float> &pose_
     pose_estimate = cv_surface_match.find_object_in_scene(object, pc);
     pose_estimation_success_ = true;
   }
+  t = clock() - t;
+  std::cout << std::endl << "pose estimation took " << t/CLOCKS_PER_SEC << " seconds" << std::endl;
 }
 
 void PoseEstimation::create_point_tensors(xt::xarray<float> &xyz, xt::xarray<int> &rgb)
