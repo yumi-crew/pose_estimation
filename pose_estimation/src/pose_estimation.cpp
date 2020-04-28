@@ -1,5 +1,4 @@
 #include <pose_estimation.hpp>
-#include <time.h>
 
 namespace pose_estimation
 {
@@ -125,11 +124,9 @@ void PoseEstimation::publish_pose(std::vector<float> &pose_estimate)
 
 void PoseEstimation::estimate_pose(std::string object, std::vector<float> &pose_estimate)
 {
-  clock_t t = clock(); 
   if (object.compare("chessboard") == 0)
   {
     create_point_tensors(xyz_, rgb_);
-    // estimate pose
     chessboard_pose_estimator.set_point_cloud(xyz_, rgb_);
     pose_estimation_success_ = chessboard_pose_estimator.find_corners(19, 12); // 8, 5
 
@@ -152,8 +149,6 @@ void PoseEstimation::estimate_pose(std::string object, std::vector<float> &pose_
     pose_estimate = cv_surface_match.find_object_in_scene(object, pc);
     pose_estimation_success_ = true;
   }
-  t = clock() - t;
-  std::cout << std::endl << "pose estimation took " << t/CLOCKS_PER_SEC << " seconds" << std::endl;
 }
 
 void PoseEstimation::create_point_tensors(xt::xarray<float> &xyz, xt::xarray<int> &rgb)
@@ -226,7 +221,7 @@ cv::Mat PoseEstimation::create_cv_pc()
   seg.setMethodType(pcl::SAC_RANSAC);
   seg.setOptimizeCoefficients(true);
   seg.setDistanceThreshold(0.0001);
-  seg.setMaxIterations(1000);
+  seg.setMaxIterations(100);
   seg.setInputCloud(cloud);
   seg.segment(*inliers_idx, *coefficients);
 
@@ -241,6 +236,7 @@ cv::Mat PoseEstimation::create_cv_pc()
             << coefficients->values[3] << std::endl;
   //use plane coefficients to calculate distance to plane for each point, filter out near points
   pcl::PointIndices::Ptr pts_close_to_plane_idx(new pcl::PointIndices);
+#pragma omp parallel for  
   for (uint i = 0; i < cloud->points.size(); ++i)
   {
     float d = (cloud->points[i].x * coefficients->values[0] +
