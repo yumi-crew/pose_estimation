@@ -12,31 +12,51 @@ source install/local_setup.bash`
 External dependencies:
   - Eigen3
   ~~~~
-  sudo apt isntall libeigen3-dev
+  sudo apt install libeigen3-dev
   ~~~~
   - OpenCV
   ~~~~
-  mkdir OpenCV_build && cd OpenCV_build
+  mkdir opencv && cd opencv
   git clone https://github.com/opencv/opencv.git
-  cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local ..
+  git clone https://github.com/opencv/opencv_contrib.git
+  mkdir build && cd build
+  cmake -D WITH_OPENMP=ON -DOPENCV_EXTRA_MODULES_PATH=../opencv_contrib/modules ../opencv
+  make -j8
+  sudo make install
   ~~~~
   - Xtensor and xtl (xtensor template library)
   ~~~~
-  mkdir xtl_build && cd xtl_build
+  mkdir xtl && cd xtl
   git clone https://github.com/xtensor-stack/xtl.git
-  cmake -D CMAKE_INSTALL_PREFIX=usr/local ..
-  make install
+  mkdir build && cd build
+  cmake -D CMAKE_INSTALL_PREFIX=usr/local ../xtl
+  make -j8
+  sudo make install
   ~~~~
   ~~~~
-  mkdir xtensor_build && cd xtensor_build
+  mkdir xtensor && cd xtensor
   git clone https://github.com/xtensor-stack/xtensor.git
-  cmake -DCMAKE_INSTALL_PREFIX=/usr/local ..
-  make install
+  cd mkdir build && cd build
+  cmake -DCMAKE_INSTALL_PREFIX=/usr/local ../xtensor
+  make -j8
+  sudo make install
   ~~~~
   - Xtensor-BLAS
   ~~~~
-  mkdir xtensor_blas_build && cd xtensor_blas_build
+  mkdir xtensor_blas && cd xtensor_blas
   git clone https://github.com/xtensor-stack/xtensor-blas.git
-  cmake -DCMAKE_INSTALL_PREFIX=/usr/local ..
-  make install
+  mkdir build && cd build
+  cmake -DCMAKE_INSTALL_PREFIX=/usr/local ../xtensor-blas
+  make -j8
+  sudo make install
   ~~~~
+  - PCL (point cloud library)
+  ~~~~
+  mkdir pcl && cd pcl
+  git clone https://github.com/PointCloudLibrary/pcl.git
+  mkdir build && cd build
+  cmake ../pcl
+  make -j8
+  sudo make install
+  ~~~~
+  - HALCON: https://www.mvtec.com/products/halcon/
