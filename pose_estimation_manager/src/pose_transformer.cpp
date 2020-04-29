@@ -91,10 +91,18 @@ std::vector<float> PoseTransformer::obj_in_base_frame()
       Eigen::Translation3f{Eigen::Vector3f{pose_msg_[0], pose_msg_[1], pose_msg_[2]}} * pose_quat.toRotationMatrix()};
 
   Eigen::Affine3f obj_in_base = apply_he_calibration(obj_in_cam);
-
+  std::cout << obj_in_base.matrix() << std::endl;
   Eigen::Vector3f y = obj_in_base.rotation().matrix().col(1);
-  Eigen::Vector3f z_base = {0.0, 0.0, -1.0};
+  Eigen::Vector3f z_base;
+  if(std::abs(y(2))<0.5)
+    z_base = {0.0, 0.0, -1.0};
+  else
+    z_base = {1.0, 0.0, 0.0};
+    
+  z_base.normalize();
   Eigen::Vector3f z = z_base - ((z_base.dot(y)) / (y.dot(y))) * y;
+  if(z(2)>0.0)
+    z = -z;
   Eigen::Vector3f x = y.cross(z);
 
   Eigen::Matrix3f rot;
@@ -107,11 +115,8 @@ std::vector<float> PoseTransformer::obj_in_base_frame()
   Eigen::Quaternionf obj_in_base_quat{obj_in_base.rotation()};
   obj_in_base_quat.normalize();
   Eigen::Vector3f obj_in_base_t{obj_in_base.translation()};
-
   std::vector<float> pose_vec{
       obj_in_base_t.x(), obj_in_base_t.y(), obj_in_base_t.z(), obj_in_base_quat.x(), obj_in_base_quat.y(), obj_in_base_quat.z(), obj_in_base_quat.w()};
-  // std::vector<float> pose_vec{
-  //     obj_in_base_t.x(), obj_in_base_t.y(), obj_in_base_t.z(), 1.0, 0.0, 0.0, 0.0};
   return pose_vec;
 }
 

@@ -41,7 +41,7 @@ void OpenCVSurfaceMatch::train_models()
   {
     std::cout << "Training model: " << model_names_[i] << std::endl;
     tick1 = cv::getTickCount();
-    detectors_[model_names_[i]] = cv::ppf_match_3d::PPF3DDetector(0.03, 0.05, 30); //tune params later
+    detectors_[model_names_[i]] = cv::ppf_match_3d::PPF3DDetector(0.03, 0.03, 40); //tune params later
     detectors_[model_names_[i]].trainModel(models_[model_names_[i]]);
     tick2 = cv::getTickCount();
     std::cout << "Training complete in "
@@ -56,7 +56,7 @@ std::vector<float> OpenCVSurfaceMatch::find_object_in_scene(std::string object, 
   std::cout << "Calculating normals" << std::endl;
   cv::Vec3d viewpoint(0, 0, 0);
   cv::Mat pc_scene_normals;
-  cv::ppf_match_3d::computeNormalsPC3d(pc_scene, pc_scene_normals, 10, true, viewpoint);
+  cv::ppf_match_3d::computeNormalsPC3d(pc_scene, pc_scene_normals, 20, true, viewpoint);
   try
   {
     int64 tick1 = cv::getTickCount();
@@ -87,8 +87,8 @@ std::vector<float> OpenCVSurfaceMatch::find_object_in_scene(std::string object, 
               << results.size() << std::endl;
 
     int subset_size{results.size()};
-    if (results.size() > 15)
-      subset_size = 15;
+    if (results.size() > 6)
+      subset_size = 6;
     std::vector<cv::ppf_match_3d::Pose3DPtr> results_subset(results.begin(), results.begin() + subset_size);
 
     icp.registerModelToScene(models_[object], pc_scene_normals, results_subset);

@@ -204,14 +204,22 @@ cv::Mat PoseEstimation::create_cv_pc()
   cloud->points.resize(cloud->width * cloud->height);
   coefficients->values.resize(4); // ax+by+cz+d=0
 
-  for (int i = 0; i < width * height; ++i, ++iter_x, ++iter_y, ++iter_z) //, ++iter_r, ++iter_g, ++iter_b)
+#pragma omp parallel for
+  for (int i = 0; i < width * height; ++i) //, ) //, ++iter_r, ++iter_g, ++iter_b)
   {
+    #pragma omp critical
+    {
     cloud->points[i].x = *iter_x;
     cloud->points[i].y = *iter_y;
     cloud->points[i].z = *iter_z;
     // cloud->points[i].r = *iter_r;
     // cloud->points[i].g = *iter_g;
     // cloud->points[i].b = *iter_b;
+    
+    ++iter_x;
+    ++iter_y;
+    ++iter_z;
+    }
   }
   cloud->is_dense = false;
   std::vector<int> idx;
@@ -246,9 +254,12 @@ cv::Mat PoseEstimation::create_cv_pc()
               std::sqrt(cloud->points[i].x * cloud->points[i].x +
                         cloud->points[i].y * cloud->points[i].y +
                         cloud->points[i].z * cloud->points[i].z);
-    if (std::abs(d) <= 0.01)
+    if (std::abs(d) <= 0.005)
     {
+      #pragma omp critical
+      {
       pts_close_to_plane_idx->indices.push_back(i);
+      }
     }
   }
   //extract outliers of ground plane
@@ -277,7 +288,8 @@ cv::Mat PoseEstimation::create_cv_pc()
   // }
   // viewer.close();
   cv::Mat pc = cv::Mat::zeros(outliers->width * outliers->height, 3, CV_32F);
-  std::cout << pc.size;
+  // std::cout << pc.size;
+#pragma omp parallel for
   for (uint i = 0; i < outliers->width * outliers->height; ++i)
   {
     pc.at<cv::Vec3f>(i)[0] = outliers->points[i].x;

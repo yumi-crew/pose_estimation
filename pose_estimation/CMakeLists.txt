@@ -35,6 +35,7 @@ find_package(BLAS REQUIRED)
 find_package(LAPACK REQUIRED)
 find_package(PCL 1.10 REQUIRED)
 find_package(Halcon 18.11 REQUIRED)
+find_package(OpenMP REQUIRED)
 
 message(${HALCON_INC_DIRS} " " ${HALCON_LIBS})
 
@@ -78,6 +79,7 @@ target_link_libraries(pose_estimation_library
                       opencv_surface_match
                       halcon_surface_match
                       ${PCL_LIBRARIES}
+                      OpenMP::OpenMP_CXX
                       )
 ament_target_dependencies(pose_estimation_library
                           rclcpp_components
