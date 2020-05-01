@@ -1,7 +1,7 @@
 #pragma once
 #include <rclcpp/rclcpp.hpp>
 #include <eigen3/Eigen/Geometry>
-#include <geometry_msgs/msg/pose.hpp>
+#include <geometry_msgs/msg/pose_stamped.hpp>
 
 #define _USE_MATH_DEFINES
 #include <cmath>
@@ -18,9 +18,9 @@ public:
   std::vector<float> hover_pose();
 
 private:
-  void pose_estimation_callback(const geometry_msgs::msg::Pose::SharedPtr msg);
+  void pose_estimation_callback(const geometry_msgs::msg::PoseStamped::SharedPtr msg);
   std::shared_ptr<rclcpp::Node> pose_node_;
-  std::shared_ptr<rclcpp::Subscription<geometry_msgs::msg::Pose>> pose_sub_;
+  std::shared_ptr<rclcpp::Subscription<geometry_msgs::msg::PoseStamped>> pose_sub_;
   std::vector<float> pose_msg_;
   Eigen::Affine3f he_calibration_mat_;
 };

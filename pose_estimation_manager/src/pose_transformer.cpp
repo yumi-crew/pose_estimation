@@ -3,7 +3,7 @@
 PoseTransformer::PoseTransformer() : pose_msg_(std::vector<float>())
 {
   pose_node_ = std::make_shared<rclcpp::Node>("pose_node");
-  pose_sub_ = pose_node_->create_subscription<geometry_msgs::msg::Pose>(
+  pose_sub_ = pose_node_->create_subscription<geometry_msgs::msg::PoseStamped>(
       "object_pose", 10, std::bind(&PoseTransformer::pose_estimation_callback, this, std::placeholders::_1));
 
   // he_calib should probably be imported from a config file at some point
@@ -12,18 +12,18 @@ PoseTransformer::PoseTransformer() : pose_msg_(std::vector<float>())
       (Eigen::AngleAxisf(3.0516253, Eigen::Vector3f({-0.690238, 0.707627, -0.15111}))).toRotationMatrix()};
 }
 
-void PoseTransformer::pose_estimation_callback(const geometry_msgs::msg::Pose::SharedPtr msg)
+void PoseTransformer::pose_estimation_callback(const geometry_msgs::msg::PoseStamped::SharedPtr msg)
 {
   pose_msg_.clear();
   pose_msg_.reserve(7);
 
-  pose_msg_.push_back(msg->position.x);
-  pose_msg_.push_back(msg->position.y);
-  pose_msg_.push_back(msg->position.z);
-  pose_msg_.push_back(msg->orientation.x);
-  pose_msg_.push_back(msg->orientation.y);
-  pose_msg_.push_back(msg->orientation.z);
-  pose_msg_.push_back(msg->orientation.w);
+  pose_msg_.push_back(msg->pose.position.x);
+  pose_msg_.push_back(msg->pose.position.y);
+  pose_msg_.push_back(msg->pose.position.z);
+  pose_msg_.push_back(msg->pose.orientation.x);
+  pose_msg_.push_back(msg->pose.orientation.y);
+  pose_msg_.push_back(msg->pose.orientation.z);
+  pose_msg_.push_back(msg->pose.orientation.w);
 }
 
 std::vector<float> PoseTransformer::get_pose_msg()
@@ -93,16 +93,12 @@ std::vector<float> PoseTransformer::obj_in_base_frame()
   Eigen::Affine3f obj_in_base = apply_he_calibration(obj_in_cam);
   std::cout << obj_in_base.matrix() << std::endl;
   Eigen::Vector3f y = obj_in_base.rotation().matrix().col(1);
-  Eigen::Vector3f z_base;
-  if(std::abs(y(2))<0.5)
-    z_base = {0.0, 0.0, -1.0};
-  else
+  Eigen::Vector3f z_base = {0.0, 0.0, -1.0};
+  if(std::abs(y(2))>0.6)
     z_base = {1.0, 0.0, 0.0};
     
   z_base.normalize();
   Eigen::Vector3f z = z_base - ((z_base.dot(y)) / (y.dot(y))) * y;
-  if(z(2)>0.0)
-    z = -z;
   Eigen::Vector3f x = y.cross(z);
 
   Eigen::Matrix3f rot;

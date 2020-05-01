@@ -20,7 +20,7 @@ PoseEstimation::on_configure(const rclcpp_lifecycle::State &state)
   init_halcon_surface_match_service_ = create_service<pose_estimation_interface::srv::InitHalconSurfaceMatch>(
       "init_halcon_surface_match", std::bind(&PoseEstimation::init_halcon_surface_match_service_handler, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 
-  object_pose_pub_ = create_publisher<geometry_msgs::msg::Pose>("object_pose", 10);
+  object_pose_pub_ = create_publisher<geometry_msgs::msg::PoseStamped>("object_pose", 10);
   RCLCPP_INFO_STREAM(get_logger(), "Configured.");
   return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
 }
@@ -110,16 +110,18 @@ void PoseEstimation::point_cloud_sub_callback(const sensor_msgs::msg::PointCloud
 void PoseEstimation::publish_pose(std::vector<float> &pose_estimate)
 {
   //generate pose msg
-  geometry_msgs::msg::Pose pose;
-  pose.position.x = pose_estimate[0];
-  pose.position.y = pose_estimate[1];
-  pose.position.z = pose_estimate[2];
-  pose.orientation.x = pose_estimate[3];
-  pose.orientation.y = pose_estimate[4];
-  pose.orientation.z = pose_estimate[5];
-  pose.orientation.w = pose_estimate[6];
+  geometry_msgs::msg::PoseStamped pose_stamped;
+  pose_stamped.header.frame_id = "object_pose";
+  pose_stamped.header.stamp = get_clock()->now();
+  pose_stamped.pose.position.x = pose_estimate[0];
+  pose_stamped.pose.position.y = pose_estimate[1];
+  pose_stamped.pose.position.z = pose_estimate[2];
+  pose_stamped.pose.orientation.x = pose_estimate[3];
+  pose_stamped.pose.orientation.y = pose_estimate[4];
+  pose_stamped.pose.orientation.z = pose_estimate[5];
+  pose_stamped.pose.orientation.w = pose_estimate[6];
   // publish pose
-  object_pose_pub_->publish(pose);
+  object_pose_pub_->publish(pose_stamped);
 }
 
 void PoseEstimation::estimate_pose(std::string object, std::vector<float> &pose_estimate)

@@ -51,7 +51,7 @@ private:
 	bool use_halcon_match;
 	void publish_pose(std::vector<float> &pose_estimate);
 	void estimate_pose(std::string object, std::vector<float> &pose_estimate);
-	rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::Pose>::SharedPtr object_pose_pub_;
+	rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::PoseStamped>::SharedPtr object_pose_pub_;
 
 	rclcpp::Service<pose_estimation_interface::srv::EstimatePose>::SharedPtr estimate_pose_service_;
 	void estimate_pose_service_handler(

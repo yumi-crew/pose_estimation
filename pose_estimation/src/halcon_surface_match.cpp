@@ -70,8 +70,12 @@ std::vector<float> HalconSurfaceMatch::find_object_in_scene(std::string object)
   std::vector<float> pose_vec(7);
   for (int i = 0; i < 3; ++i)
     pose_vec[i] = pose[i];
-  for (int i = 0; i < 4; ++i)
-    pose_vec[i + 3] = quat[i];
+
+  // the first element of quat is the real part of the quaternion  
+  pose_vec[3] = quat[1];
+  pose_vec[4] = quat[2];
+  pose_vec[5] = quat[3];
+  pose_vec[6] = quat[0];
   return pose_vec;
 }
 } // namespace pose_estimation
