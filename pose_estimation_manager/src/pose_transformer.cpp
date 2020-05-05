@@ -68,9 +68,9 @@ std::vector<float> PoseTransformer::chessboard_pose_to_base_frame(float z_offset
   }
 }
 
-std::vector<float> PoseTransformer::hover_pose()
+std::vector<double> PoseTransformer::hover_pose()
 {
-  std::vector<float> hover_pose = obj_in_base_frame();
+  std::vector<double> hover_pose = obj_in_base_frame();
   hover_pose[2] += 0.1; //apply offset
   return hover_pose;
 }

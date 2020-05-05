@@ -15,7 +15,7 @@ public:
   std::vector<float> chessboard_pose_to_base_frame(float z_offset, bool Euler_angles);
   Eigen::Affine3f apply_he_calibration(Eigen::Affine3f);
   std::vector<double> obj_in_base_frame();
-  std::vector<float> hover_pose();
+  std::vector<double> hover_pose();
 
 private:
   void pose_estimation_callback(const geometry_msgs::msg::PoseStamped::SharedPtr msg);
