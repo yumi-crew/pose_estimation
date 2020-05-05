@@ -4,11 +4,13 @@
 #include "halcon_surface_match.hpp"
 
 #include <iostream>
+#include <unistd.h>
 #include <xtensor/xarray.hpp>
 #include <opencv2/core.hpp>
 
 #include <rclcpp/rclcpp.hpp>
 #include <rclcpp_lifecycle/lifecycle_node.hpp>
+#include <ament_index_cpp/get_package_share_directory.hpp>
 
 #include <geometry_msgs/msg/pose_stamped.hpp>
 #include <sensor_msgs/msg/point_cloud2.hpp>
@@ -48,6 +50,7 @@ private:
 	ChessboardPoseEstimator chessboard_pose_estimator;
 	OpenCVSurfaceMatch cv_surface_match;
 	HalconSurfaceMatch halcon_surface_match;
+	bool remove_planes(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud, int num_planes);
 	bool use_halcon_match;
 	void publish_pose(std::vector<float> &pose_estimate);
 	void estimate_pose(std::string object, std::vector<float> &pose_estimate);
@@ -74,8 +77,9 @@ private:
 	//point cloud stuff
 	sensor_msgs::msg::PointCloud2::SharedPtr point_cloud_;
 	void create_point_tensors(xt::xarray<float> &xyz, xt::xarray<int> &rgb);
-	cv::Mat create_cv_pc();
+	cv::Mat create_surface_match_pc(int num_planes);
 
+	std::string path_to_scene_;
 	xt::xarray<float> xyz_;
 	xt::xarray<int> rgb_;
 	bool pose_estimation_success_;

@@ -7,6 +7,10 @@ PoseEstimation::PoseEstimation(const rclcpp::NodeOptions &options) : rclcpp_life
                                                                      pnt_cld_recieved_{false}
 {
   chessboard_pose_estimator = ChessboardPoseEstimator();
+  char buf[20];
+  getlogin_r(buf, 20);
+  std::string u_name = buf;
+  path_to_scene_ = "/home/" + u_name + "/abb_ws/current_scene.ply";
 }
 
 rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
@@ -89,7 +93,7 @@ void PoseEstimation::init_cv_surface_match_service_handler(
 }
 
 void PoseEstimation::init_halcon_surface_match_service_handler(
-     const std::shared_ptr<rmw_request_id_t> request_header,
+    const std::shared_ptr<rmw_request_id_t> request_header,
     const std::shared_ptr<pose_estimation_interface::srv::InitHalconSurfaceMatch::Request> request,
     std::shared_ptr<pose_estimation_interface::srv::InitHalconSurfaceMatch::Response> response)
 {
@@ -138,16 +142,16 @@ void PoseEstimation::estimate_pose(std::string object, std::vector<float> &pose_
       pose_estimate = chessboard_pose_estimator.estimate_pose();
     }
   }
-  else if(use_halcon_match)
+  else if (use_halcon_match)
   {
-    create_cv_pc();
+    cv::Mat pc = create_surface_match_pc(1);
     halcon_surface_match.update_current_scene();
     pose_estimate = halcon_surface_match.find_object_in_scene(object);
     pose_estimation_success_ = true;
   }
   else
   {
-    cv::Mat pc = create_cv_pc();
+    cv::Mat pc = create_surface_match_pc(1);
     pose_estimate = cv_surface_match.find_object_in_scene(object, pc);
     pose_estimation_success_ = true;
   }
@@ -182,7 +186,7 @@ void PoseEstimation::create_point_tensors(xt::xarray<float> &xyz, xt::xarray<int
   }
 }
 
-cv::Mat PoseEstimation::create_cv_pc()
+cv::Mat PoseEstimation::create_surface_match_pc(int num_planes) // rename to create_surface_match_pc()
 {
   // creates Nx3 cv mat for point cloud representation. Removes ground plane
   auto width = static_cast<int>(point_cloud_->width);
@@ -196,36 +200,131 @@ cv::Mat PoseEstimation::create_cv_pc()
 
   pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>);
   pcl::PointCloud<pcl::PointXYZ>::Ptr outliers(new pcl::PointCloud<pcl::PointXYZ>);
-  pcl::PointCloud<pcl::PointXYZ>::Ptr inliers(new pcl::PointCloud<pcl::PointXYZ>);
-  pcl::ModelCoefficients::Ptr coefficients(new pcl::ModelCoefficients);
+  // pcl::PointCloud<pcl::PointXYZ>::Ptr inliers(new pcl::PointCloud<pcl::PointXYZ>);
+  // pcl::ModelCoefficients::Ptr coefficients(new pcl::ModelCoefficients);
   pcl::PointIndices::Ptr inliers_idx(new pcl::PointIndices);
   pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_plane(new pcl::PointCloud<pcl::PointXYZ>);
-  pcl::SACSegmentation<pcl::PointXYZ> seg;
+  // pcl::SACSegmentation<pcl::PointXYZ> seg;
   cloud->width = width * height;
   cloud->height = 1;
   cloud->points.resize(cloud->width * cloud->height);
-  coefficients->values.resize(4); // ax+by+cz+d=0
+  // coefficients->values.resize(4); // ax+by+cz+d=0
 
 #pragma omp parallel for
   for (int i = 0; i < width * height; ++i) //, ) //, ++iter_r, ++iter_g, ++iter_b)
   {
-    #pragma omp critical
+#pragma omp critical
     {
-    cloud->points[i].x = *iter_x;
-    cloud->points[i].y = *iter_y;
-    cloud->points[i].z = *iter_z;
-    // cloud->points[i].r = *iter_r;
-    // cloud->points[i].g = *iter_g;
-    // cloud->points[i].b = *iter_b;
-    
-    ++iter_x;
-    ++iter_y;
-    ++iter_z;
+      cloud->points[i].x = *iter_x;
+      cloud->points[i].y = *iter_y;
+      cloud->points[i].z = *iter_z;
+      // cloud->points[i].r = *iter_r;
+      // cloud->points[i].g = *iter_g;
+      // cloud->points[i].b = *iter_b;
+
+      ++iter_x;
+      ++iter_y;
+      ++iter_z;
     }
   }
+
   cloud->is_dense = false;
   std::vector<int> idx;
   pcl::removeNaNFromPointCloud(*cloud, *cloud, idx);
+  // point at which remove_planes should be called, remove commented block after verification that the funcion works as expected
+
+  //   seg.setModelType(pcl::SACMODEL_PLANE);
+  //   seg.setMethodType(pcl::SAC_RANSAC);
+  //   seg.setOptimizeCoefficients(true);
+  //   seg.setDistanceThreshold(0.0001);
+  //   seg.setMaxIterations(100);
+  //   seg.setInputCloud(cloud);
+  //   seg.segment(*inliers_idx, *coefficients);
+
+  //   if (inliers_idx->indices.size() == 0)
+  //   {
+  //     PCL_ERROR("Could not estimate a planar model for the given dataset.\n");
+  //   }
+
+  //   std::cout << "plane coefficients " << coefficients->values[0] << " "
+  //             << coefficients->values[1] << " "
+  //             << coefficients->values[2] << " "
+  //             << coefficients->values[3] << std::endl;
+  //   //use plane coefficients to calculate distance to plane for each point, filter out near points
+  //   pcl::PointIndices::Ptr pts_close_to_plane_idx(new pcl::PointIndices);
+  // #pragma omp parallel for
+  //   for (uint i = 0; i < cloud->points.size(); ++i)
+  //   {
+  //     float d = (cloud->points[i].x * coefficients->values[0] +
+  //                cloud->points[i].y * coefficients->values[1] +
+  //                cloud->points[i].z * coefficients->values[2] +
+  //                coefficients->values[3]) /
+  //               std::sqrt(cloud->points[i].x * cloud->points[i].x +
+  //                         cloud->points[i].y * cloud->points[i].y +
+  //                         cloud->points[i].z * cloud->points[i].z);
+  //     if (std::abs(d) <= 0.005)
+  //     {
+  //       #pragma omp critical
+  //       {
+  //       pts_close_to_plane_idx->indices.push_back(i);
+  //       }
+  //     }
+  //   }
+  //   //extract outliers of ground plane
+  //   pcl::ExtractIndices<pcl::PointXYZ> extract;
+  //   extract.setInputCloud(cloud);
+  //   extract.setIndices(pts_close_to_plane_idx);
+  //   extract.setNegative(false);
+  //   extract.filter(*inliers);
+  //   extract.setNegative(true);
+  //   extract.filter(*outliers); //outliers now contains the points not on the ground plane
+
+  // point at which remove_planes() returns
+  if (!remove_planes(cloud, num_planes))
+  {
+    std::cout << "Remove planes failed" << std::endl;
+  }
+
+
+  // Visualization
+  // pcl::visualization::PCLVisualizer viewer("PCL visualizer");
+
+  // pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ> cloud_inliers_handler(cloud, 255, 20, 20); // Plane in RED
+  // viewer.addPointCloud(inliers, cloud_inliers_handler, "cloud inliers");
+
+  // pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ> cloud_outliers_handler(cloud, 200, 200, 200);
+  // viewer.addPointCloud(outliers, cloud_outliers_handler, "cloud outliers");
+
+  // while (!viewer.wasStopped())
+  // {
+  //   viewer.spinOnce();
+  // }
+  // viewer.close();
+  cv::Mat pc = cv::Mat::zeros(cloud->width * cloud->height, 3, CV_32F);
+  if (use_halcon_match)
+  {
+    pcl::io::savePLYFileASCII(path_to_scene_, *cloud);
+  }
+  else
+  {
+#pragma omp parallel for
+    for (uint i = 0; i < outliers->width * outliers->height; ++i)
+    {
+      pc.at<cv::Vec3f>(i)[0] = outliers->points[i].x;
+      pc.at<cv::Vec3f>(i)[1] = outliers->points[i].y;
+      pc.at<cv::Vec3f>(i)[2] = outliers->points[i].z;
+    }
+  }
+  return pc;
+}
+
+bool PoseEstimation::remove_planes(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud, int num_planes)
+{
+  pcl::SACSegmentation<pcl::PointXYZ> seg;
+  pcl::PointCloud<pcl::PointXYZ>::Ptr inliers(new pcl::PointCloud<pcl::PointXYZ>);
+  pcl::ModelCoefficients::Ptr coefficients(new pcl::ModelCoefficients);
+  coefficients->values.resize(4); // ax+by+cz+d=0
+  pcl::PointIndices::Ptr inliers_idx(new pcl::PointIndices);
 
   seg.setModelType(pcl::SACMODEL_PLANE);
   seg.setMethodType(pcl::SAC_RANSAC);
@@ -246,7 +345,7 @@ cv::Mat PoseEstimation::create_cv_pc()
             << coefficients->values[3] << std::endl;
   //use plane coefficients to calculate distance to plane for each point, filter out near points
   pcl::PointIndices::Ptr pts_close_to_plane_idx(new pcl::PointIndices);
-#pragma omp parallel for  
+#pragma omp parallel for
   for (uint i = 0; i < cloud->points.size(); ++i)
   {
     float d = (cloud->points[i].x * coefficients->values[0] +
@@ -258,9 +357,9 @@ cv::Mat PoseEstimation::create_cv_pc()
                         cloud->points[i].z * cloud->points[i].z);
     if (std::abs(d) <= 0.005)
     {
-      #pragma omp critical
+#pragma omp critical
       {
-      pts_close_to_plane_idx->indices.push_back(i);
+        pts_close_to_plane_idx->indices.push_back(i);
       }
     }
   }
@@ -268,37 +367,18 @@ cv::Mat PoseEstimation::create_cv_pc()
   pcl::ExtractIndices<pcl::PointXYZ> extract;
   extract.setInputCloud(cloud);
   extract.setIndices(pts_close_to_plane_idx);
-  extract.setNegative(false);
-  extract.filter(*inliers);
   extract.setNegative(true);
-  extract.filter(*outliers); //outliers now contains the points not on the ground plane
-  
-  pcl::io::savePLYFileASCII("current_scene.ply", *outliers);
-
-  // Visualization
-  // pcl::visualization::PCLVisualizer viewer("PCL visualizer");
-
-  // pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ> cloud_inliers_handler(cloud, 255, 20, 20); // Plane in RED
-  // viewer.addPointCloud(inliers, cloud_inliers_handler, "cloud inliers");
-
-  // pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ> cloud_outliers_handler(cloud, 200, 200, 200);
-  // viewer.addPointCloud(outliers, cloud_outliers_handler, "cloud outliers");
-
-  // while (!viewer.wasStopped())
-  // {
-  //   viewer.spinOnce();
-  // }
-  // viewer.close();
-  cv::Mat pc = cv::Mat::zeros(outliers->width * outliers->height, 3, CV_32F);
-  // std::cout << pc.size;
-#pragma omp parallel for
-  for (uint i = 0; i < outliers->width * outliers->height; ++i)
+  extract.filter(*cloud); //cloud now contains the points not on the ground plane
+  // if more planes should be removed
+  num_planes--;
+  if (num_planes > 0)
   {
-    pc.at<cv::Vec3f>(i)[0] = outliers->points[i].x;
-    pc.at<cv::Vec3f>(i)[1] = outliers->points[i].y;
-    pc.at<cv::Vec3f>(i)[2] = outliers->points[i].z;
+    remove_planes(cloud, num_planes);
+  } 
+  else
+  {
+    return true;
   }
-  return pc;
 }
 
 } //namespace pose_estimation

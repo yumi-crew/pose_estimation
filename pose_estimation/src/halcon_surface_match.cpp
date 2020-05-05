@@ -1,11 +1,15 @@
 #include "halcon_surface_match.hpp"
+#include <unistd.h>
 
 namespace pose_estimation
 {
 HalconSurfaceMatch::HalconSurfaceMatch()
 {
   current_scene_ = HalconCpp::HObjectModel3D();
-  path_to_scene_ = "/home/markus/abb_ws/current_scene.ply";
+  char buf[20];
+  getlogin_r(buf, 20);
+  std::string u_name = buf;
+  path_to_scene_ = "/home/" + u_name + "/abb_ws/current_scene.ply";
 }
 
 HalconSurfaceMatch::~HalconSurfaceMatch()
@@ -71,7 +75,7 @@ std::vector<float> HalconSurfaceMatch::find_object_in_scene(std::string object)
   for (int i = 0; i < 3; ++i)
     pose_vec[i] = pose[i];
 
-  // the first element of quat is the real part of the quaternion  
+  // the first element of quat is the real part of the quaternion
   pose_vec[3] = quat[1];
   pose_vec[4] = quat[2];
   pose_vec[5] = quat[3];
