@@ -75,7 +75,7 @@ std::vector<float> PoseTransformer::hover_pose()
   return hover_pose;
 }
 
-std::vector<float> PoseTransformer::obj_in_base_frame()
+std::vector<double> PoseTransformer::obj_in_base_frame()
 {
   rclcpp::spin_some(pose_node_);
 
@@ -110,7 +110,7 @@ std::vector<float> PoseTransformer::obj_in_base_frame()
   Eigen::Quaternionf obj_in_base_quat{obj_in_base.rotation()};
   obj_in_base_quat.normalize();
   Eigen::Vector3f obj_in_base_t{obj_in_base.translation()};
-  std::vector<float> pose_vec{
+  std::vector<double> pose_vec{
       obj_in_base_t.x(), obj_in_base_t.y(), obj_in_base_t.z(), obj_in_base_quat.x(), obj_in_base_quat.y(), obj_in_base_quat.z(), obj_in_base_quat.w()};
   return pose_vec;
 }
