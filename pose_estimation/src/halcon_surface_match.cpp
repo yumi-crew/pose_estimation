@@ -59,7 +59,7 @@ std::vector<float> HalconSurfaceMatch::find_object_in_scene(std::string object)
   HalconCpp::HTuple pose;
   try
   {
-    pose = current_scene_.FindSurfaceModel(surface_models_[object], 0.02, 0.2, 0.0, "true", genParamName, genParamValue, &score, &result);
+    pose = current_scene_.FindSurfaceModel(surface_models_[object], 0.03, 0.5, 0.0, "true", genParamName, genParamValue, &score, &result);
   }
   catch (HalconCpp::HException &e)
   {

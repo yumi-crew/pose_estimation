@@ -272,7 +272,7 @@ cv::Mat PoseEstimation::create_cv_pc()
   extract.filter(*inliers);
   extract.setNegative(true);
   extract.filter(*outliers); //outliers now contains the points not on the ground plane
-
+  
   pcl::io::savePLYFileASCII("current_scene.ply", *outliers);
 
   // Visualization

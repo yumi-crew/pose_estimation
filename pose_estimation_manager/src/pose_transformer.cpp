@@ -44,7 +44,6 @@ std::vector<float> PoseTransformer::chessboard_pose_to_base_frame(float z_offset
 
   Eigen::Quaternionf transf_quat{Eigen::AngleAxisf(M_PI, Eigen::Vector3f::UnitX())};
   Eigen::Quaternionf roatated_quat{pose_quat * transf_quat};
-  // "graspable" pose in camera frame
   Eigen::Affine3f obj_in_cam{
       Eigen::Translation3f{Eigen::Vector3f{pose_msg_[0], pose_msg_[1], pose_msg_[2]}} * roatated_quat.toRotationMatrix()};
 
