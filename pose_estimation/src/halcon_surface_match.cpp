@@ -6,8 +6,7 @@ namespace pose_estimation
 HalconSurfaceMatch::HalconSurfaceMatch()
 {
   current_scene_ = HalconCpp::HObjectModel3D();
-  char buf[20];
-  getlogin_r(buf, 20);
+  char* buf = getlogin();
   std::string u_name = buf;
   path_to_scene_ = "/home/" + u_name + "/abb_ws/current_scene.ply";
 }

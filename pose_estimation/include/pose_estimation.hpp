@@ -79,6 +79,7 @@ private:
 	void create_point_tensors(xt::xarray<float> &xyz, xt::xarray<int> &rgb);
 	cv::Mat create_surface_match_pc(int num_planes);
 
+  int num_planes_;
 	std::string path_to_scene_;
 	xt::xarray<float> xyz_;
 	xt::xarray<int> rgb_;

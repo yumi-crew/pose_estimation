@@ -1,3 +1,4 @@
 string model_dir_path
+int64 num_planes
 ---
 bool success
