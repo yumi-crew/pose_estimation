@@ -81,7 +81,7 @@ bool HalconSurfaceMatch::find_object_in_scene(std::string object, std::vector<fl
 
   //check score for success.
   std::cout << "matching score "<< score.ToString() << std::endl;
-  if(static_cast<double>(score)<0.1)
+  if(static_cast<double>(score)<0.20)
     return false;
   return true;
 }
