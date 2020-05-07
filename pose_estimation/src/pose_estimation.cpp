@@ -147,8 +147,8 @@ namespace pose_estimation
     {
       cv::Mat pc = create_surface_match_pc(num_planes_);
       halcon_surface_match.update_current_scene();
-      pose_estimate = halcon_surface_match.find_object_in_scene(object);
-      pose_estimation_success_ = true;
+      pose_estimation_success_ = halcon_surface_match.find_object_in_scene(object, pose_estimate);
+      // pose_estimation_success_ = true;
     }
     else
     {

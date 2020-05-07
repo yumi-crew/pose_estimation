@@ -55,7 +55,7 @@ void HalconSurfaceMatch::update_current_scene()
   current_scene_ = scene_without_normals.SurfaceNormalsObjectModel3d("mls", genParamName, genParamValue);
 }
 
-std::vector<float> HalconSurfaceMatch::find_object_in_scene(std::string object)
+bool HalconSurfaceMatch::find_object_in_scene(std::string object, std::vector<float>& pose_estimate)
 {
   HalconCpp::HTuple genParamName, genParamValue, status, score, result_id;
   HalconCpp::HSurfaceMatchingResult result;
@@ -70,15 +70,19 @@ std::vector<float> HalconSurfaceMatch::find_object_in_scene(std::string object)
   }
   HalconCpp::HTuple quat;
   HalconCpp::PoseToQuat(pose, &quat);
-  std::vector<float> pose_vec(7);
   for (int i = 0; i < 3; ++i)
-    pose_vec[i] = pose[i];
+    pose_estimate[i] = pose[i];
 
   // the first element of quat is the real part of the quaternion
-  pose_vec[3] = quat[1];
-  pose_vec[4] = quat[2];
-  pose_vec[5] = quat[3];
-  pose_vec[6] = quat[0];
-  return pose_vec;
+  pose_estimate[3] = quat[1];
+  pose_estimate[4] = quat[2];
+  pose_estimate[5] = quat[3];
+  pose_estimate[6] = quat[0];
+
+  //check score for success.
+  std::cout << "matching score "<< score.ToString() << std::endl;
+  if(static_cast<double>(score)<0.1)
+    return false;
+  return true;
 }
 } // namespace pose_estimation

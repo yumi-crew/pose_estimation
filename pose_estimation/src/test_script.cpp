@@ -1,4 +1,5 @@
 #include "chessboard_pose_estimator.hpp"
+#include <unistd.h>
 
 #include <Zivid/Zivid.h>
 #include <Zivid/CloudVisualizer.h>
@@ -17,15 +18,18 @@
 
 int main()
 {
-	pose_estimation::HalconSurfaceMatch surface_match;
-	std::string path = "/home/markus/Documents/models_ply/";
-	surface_match.load_models(path);
-	std::cout << "after load\n";
-	surface_match.update_current_scene();
-	std::cout << "after update\n";
-	std::vector<float> pose = surface_match.find_object_in_scene("screwdriver");
-	for(auto p:pose)
-		std::cout << p << " ";
-	std::cout << "\npossible success!" << std::endl;
-	return 0;
+  pose_estimation::HalconSurfaceMatch surface_match;
+  char *buf = getlogin();
+  std::string u_name = buf;
+  std::string path = "/home/" + u_name + "/abb_ws/src/object_files/ply";
+  surface_match.load_models(path);
+  std::cout << "after load\n";
+  surface_match.update_current_scene();
+  std::cout << "after update\n";
+  std::vector<float> pose(7);
+  bool success = surface_match.find_object_in_scene("screwdriver", pose);
+  std::cout << "success = " << success << std::endl;
+  for (auto p : pose)
+    std::cout << p << " ";
+  return 0;
 }

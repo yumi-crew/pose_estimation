@@ -15,7 +15,7 @@ class HalconSurfaceMatch
   ~HalconSurfaceMatch();
   void load_models(std::string path_to_models_dir);
   void generate_surface_models();
-  std::vector<float> find_object_in_scene(std::string object);
+  bool find_object_in_scene(std::string object, std::vector<float>& pose_estimate);
   void update_current_scene();
 
   private:
