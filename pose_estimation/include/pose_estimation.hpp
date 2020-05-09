@@ -133,9 +133,9 @@ namespace pose_estimation
     rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr point_cloud_sub_;
     sensor_msgs::msg::PointCloud2::SharedPtr point_cloud_;
 
-    ChessboardPoseEstimator chessboard_pose_estimator;
-    OpenCVSurfaceMatch cv_surface_match;
-    HalconSurfaceMatch halcon_surface_match;
+    ChessboardPoseEstimator chessboard_pose_estimator_;
+    OpenCVSurfaceMatch cv_surface_match_;
+    HalconSurfaceMatch halcon_surface_match_;
     bool use_halcon_match_;
     int num_planes_;
     /*Path to the current scene, for halcon surface match.*/

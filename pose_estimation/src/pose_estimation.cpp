@@ -6,7 +6,7 @@ namespace pose_estimation
                                                                        pose_estimation_success_{false},
                                                                        pnt_cld_recieved_{false}
   {
-    chessboard_pose_estimator = ChessboardPoseEstimator();
+    chessboard_pose_estimator_ = ChessboardPoseEstimator();
     char *buf = getlogin();
     std::string u_name = buf;
     path_to_scene_ = "/home/" + u_name + "/abb_ws/current_scene.ply";
@@ -86,10 +86,10 @@ namespace pose_estimation
       std::shared_ptr<pose_estimation_interface::srv::InitCvSurfaceMatch::Response> response)
   {
     num_planes_ = request->num_planes;
-    cv_surface_match.load_models_from_dir(request->model_dir_path);
-    cv_surface_match.train_models();
+    cv_surface_match_.load_models_from_dir(request->model_dir_path);
+    cv_surface_match_.train_models();
     response->success = true;
-    use_halcon_match = false;
+    use_halcon_match_ = false;
   }
 
   void PoseEstimation::init_halcon_surface_match_service_handler(
@@ -98,9 +98,9 @@ namespace pose_estimation
       std::shared_ptr<pose_estimation_interface::srv::InitHalconSurfaceMatch::Response> response)
   {
     num_planes_ = request->num_planes;
-    halcon_surface_match.load_models(request->model_dir_path);
+    halcon_surface_match_.load_models(request->model_dir_path);
     response->success = true;
-    use_halcon_match = true;
+    use_halcon_match_ = true;
   }
 
   void PoseEstimation::point_cloud_sub_callback(const sensor_msgs::msg::PointCloud2::SharedPtr point_cloud_msg)
@@ -134,26 +134,26 @@ namespace pose_estimation
     if (object.compare("chessboard") == 0)
     {
       create_point_tensors(xyz_, rgb_);
-      chessboard_pose_estimator.set_point_cloud(xyz_, rgb_);
-      pose_estimation_success_ = chessboard_pose_estimator.find_corners(19, 12); // 8, 5
+      chessboard_pose_estimator_.set_point_cloud(xyz_, rgb_);
+      pose_estimation_success_ = chessboard_pose_estimator_.find_corners(19, 12); // 8, 5
 
       if (pose_estimation_success_)
       {
-        chessboard_pose_estimator.extract_feature_pnt_cld();
-        pose_estimate = chessboard_pose_estimator.estimate_pose();
+        chessboard_pose_estimator_.extract_feature_pnt_cld();
+        pose_estimate = chessboard_pose_estimator_.estimate_pose();
       }
     }
-    else if (use_halcon_match)
+    else if (use_halcon_match_)
     {
       cv::Mat pc = create_surface_match_pc(num_planes_);
-      halcon_surface_match.update_current_scene();
-      pose_estimation_success_ = halcon_surface_match.find_object_in_scene(object, pose_estimate);
+      halcon_surface_match_.update_current_scene();
+      pose_estimation_success_ = halcon_surface_match_.find_object_in_scene(object, pose_estimate);
       // pose_estimation_success_ = true;
     }
     else
     {
       cv::Mat pc = create_surface_match_pc(num_planes_);
-      pose_estimate = cv_surface_match.find_object_in_scene(object, pc);
+      pose_estimate = cv_surface_match_.find_object_in_scene(object, pc);
       pose_estimation_success_ = true;
     }
   }
@@ -232,7 +232,7 @@ namespace pose_estimation
     }
 
     cv::Mat pc = cv::Mat::zeros(cloud->width * cloud->height, 3, CV_32F);
-    if (use_halcon_match)
+    if (use_halcon_match_)
     {
       pcl::io::savePLYFileASCII(path_to_scene_, *cloud);
     }

@@ -17,6 +17,7 @@ class HalconSurfaceMatch
   void generate_surface_models();
   bool find_object_in_scene(std::string object, std::vector<float>& pose_estimate);
   void update_current_scene();
+  void update_current_scene(std::string path_to_scene);
 
   private:
   std::map<std::string, HalconCpp::HObjectModel3D> models_;

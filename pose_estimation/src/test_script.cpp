@@ -22,14 +22,16 @@ int main()
   char *buf = getlogin();
   std::string u_name = buf;
   std::string path = "/home/" + u_name + "/abb_ws/src/object_files/ply";
+  std::string scene = "/home/" + u_name + "/abb_ws/scene_2.ply";
   surface_match.load_models(path);
   std::cout << "after load\n";
   surface_match.update_current_scene();
   std::cout << "after update\n";
   std::vector<float> pose(7);
-  bool success = surface_match.find_object_in_scene("screwdriver", pose);
+  bool success = surface_match.find_object_in_scene("lift_hole_adapter", pose);
   std::cout << "success = " << success << std::endl;
   for (auto p : pose)
     std::cout << p << " ";
+  std::cout << std::endl;  
   return 0;
 }

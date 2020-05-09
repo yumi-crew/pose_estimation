@@ -6,7 +6,7 @@ namespace pose_estimation
 HalconSurfaceMatch::HalconSurfaceMatch()
 {
   current_scene_ = HalconCpp::HObjectModel3D();
-  char* buf = getlogin();
+  char *buf = getlogin();
   std::string u_name = buf;
   path_to_scene_ = "/home/" + u_name + "/abb_ws/current_scene.ply";
 }
@@ -32,56 +32,83 @@ void HalconSurfaceMatch::load_models(std::string path_to_models_dir)
       name = name.substr(0, name.find("."));
       std::cout << "as: " << name << std::endl;
       model_names_.push_back(name);
-      HalconCpp::HTuple genParamName, genParamValue, object_model, status;
-      models_[name].ReadObjectModel3d(model_path.c_str(), "m", genParamName, genParamValue);
+      HalconCpp::HTuple gen_param_name, gen_param_value, object_model, status;
+      models_[name].ReadObjectModel3d(model_path.c_str(), "m", gen_param_name, gen_param_value);
     }
   }
   // create surface models (training stage)
   for (auto name : model_names_)
   {
-    HalconCpp::HTuple genParamName, genParamValue;
-    surface_models_[name] = models_[name].CreateSurfaceModel(0.02, genParamName, genParamValue);
+    HalconCpp::HTuple gen_param_name, gen_param_value;
+    surface_models_[name] = models_[name].CreateSurfaceModel(0.03, gen_param_name, gen_param_value);
   }
 }
 
 void HalconSurfaceMatch::update_current_scene()
 {
-  HalconCpp::HTuple genParamName, genParamValue, status;
+  HalconCpp::HTuple gen_param_name, gen_param_value, status;
   HalconCpp::HObjectModel3D scene_without_normals;
 
   HalconCpp::ClearObjectModel3d(current_scene_);
-  scene_without_normals.ReadObjectModel3d(path_to_scene_.c_str(), "m", genParamName, genParamValue);
-
-  current_scene_ = scene_without_normals.SurfaceNormalsObjectModel3d("mls", genParamName, genParamValue);
-}
-
-bool HalconSurfaceMatch::find_object_in_scene(std::string object, std::vector<float>& pose_estimate)
-{
-  HalconCpp::HTuple genParamName, genParamValue, status, score, result_id;
-  HalconCpp::HSurfaceMatchingResult result;
-  HalconCpp::HTuple pose;
+  scene_without_normals.ReadObjectModel3d(path_to_scene_.c_str(), "m", gen_param_name, gen_param_value);
   try
   {
-    pose = current_scene_.FindSurfaceModel(surface_models_[object], 0.03, 0.5, 0.0, "true", genParamName, genParamValue, &score, &result);
+    current_scene_ = scene_without_normals.SurfaceNormalsObjectModel3d("mls", gen_param_name, gen_param_value);
   }
   catch (HalconCpp::HException &e)
   {
-    std::cout << e.ErrorMessage();
+    std::cout << e.ErrorMessage() << std::endl;
   }
-  HalconCpp::HTuple quat;
-  HalconCpp::PoseToQuat(pose, &quat);
-  for (int i = 0; i < 3; ++i)
-    pose_estimate[i] = pose[i];
+}
 
-  // the first element of quat is the real part of the quaternion
-  pose_estimate[3] = quat[1];
-  pose_estimate[4] = quat[2];
-  pose_estimate[5] = quat[3];
-  pose_estimate[6] = quat[0];
+void HalconSurfaceMatch::update_current_scene(std::string path_to_scene)
+{
+  path_to_scene_ = path_to_scene;
+  update_current_scene();
+}
 
-  //check score for success.
-  std::cout << "matching score "<< score.ToString() << std::endl;
-  if(static_cast<double>(score)<0.20)
+bool HalconSurfaceMatch::find_object_in_scene(std::string object, std::vector<float> &pose_estimate)
+{
+  HalconCpp::HTuple gen_param_name, gen_param_value, status, score, result_id;
+  HalconCpp::HSurfaceMatchingResult result;
+  HalconCpp::HTuple pose;
+
+  gen_param_name[0] = "num_matches";
+  gen_param_value[0] = 10;
+  gen_param_name[1] = "pose_ref_use_scene_normals";
+  gen_param_value[1] = "true";
+  gen_param_name[2] = "pose_ref_num_steps";
+  gen_param_value[2] = 20;
+
+  try
+  {
+    pose = current_scene_.FindSurfaceModel(surface_models_[object], 0.03, 1.0, 0, "true", gen_param_name, gen_param_value, &score, &result);
+
+    std::cout << pose.Type() << std::endl;
+
+    HalconCpp::HTuple quat;
+    HalconCpp::PoseToQuat(pose, &quat);
+    for (int i = 0; i < 3; ++i)
+      pose_estimate[i] = pose[i];
+
+    // the first element of quat is the real part of the quaternion
+    pose_estimate[3] = quat[1];
+    pose_estimate[4] = quat[2];
+    pose_estimate[5] = quat[3];
+    pose_estimate[6] = quat[0];
+
+    std::cout << "POSE TO STRING****************" << std::endl;
+    std::cout << pose.ToString() << std::endl;
+
+    //check score for success.
+    std::cout << "matching score: " << score.ToString() << std::endl;
+  }
+  catch (HalconCpp::HException &e)
+  {
+    std::cout << e.ErrorMessage() << std::endl;
+    return false;
+  }
+  if (static_cast<double>(score) < 0.20)
     return false;
   return true;
 }
