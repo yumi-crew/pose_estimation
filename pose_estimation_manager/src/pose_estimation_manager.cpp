@@ -99,12 +99,13 @@ bool PoseEstimationManager::call_capture_srv(std::chrono::seconds time_out = 5s)
   return true;
 }
 
-bool PoseEstimationManager::call_estimate_pose_srv(std::string object, std::chrono::seconds time_out = 5s)
+bool PoseEstimationManager::call_estimate_pose_srv(std::string object, int num_planes, std::chrono::seconds time_out = 5s)
 {
   auto temp_node{std::make_unique<rclcpp::Node>("temp_node")};
   auto temp_node_client{temp_node->create_client<pose_estimation_interface::srv::EstimatePose>("/estimate_pose")};
   auto request{std::make_shared<pose_estimation_interface::srv::EstimatePose::Request>()};
   request->object = object;
+  request->num_planes = num_planes;
 
   if (!temp_node_client->wait_for_service(10s))
   {
@@ -127,13 +128,12 @@ bool PoseEstimationManager::call_estimate_pose_srv(std::string object, std::chro
   return true;
 }
 
-bool PoseEstimationManager::call_init_cv_surface_match_srv(std::string model_dir_path, int num_planes, std::chrono::seconds time_out)
+bool PoseEstimationManager::call_init_cv_surface_match_srv(std::string model_dir_path, std::chrono::seconds time_out)
 {
   auto temp_node{std::make_unique<rclcpp::Node>("temp_node")};
   auto temp_node_client{temp_node->create_client<pose_estimation_interface::srv::InitCvSurfaceMatch>("/init_cv_surface_match")};
   auto request{std::make_shared<pose_estimation_interface::srv::InitCvSurfaceMatch::Request>()};
   request->model_dir_path = model_dir_path;
-  request->num_planes = num_planes;
 
   if (!temp_node_client->wait_for_service(10s))
   {
@@ -156,13 +156,12 @@ bool PoseEstimationManager::call_init_cv_surface_match_srv(std::string model_dir
   return true;
 }
 
-bool PoseEstimationManager::call_init_halcon_surface_match_srv(std::string model_dir_path, int num_planes, std::chrono::seconds time_out)
+bool PoseEstimationManager::call_init_halcon_surface_match_srv(std::string model_dir_path, std::chrono::seconds time_out)
 {
   auto temp_node{std::make_unique<rclcpp::Node>("temp_node")};
   auto temp_node_client{temp_node->create_client<pose_estimation_interface::srv::InitHalconSurfaceMatch>("/init_halcon_surface_match")};
   auto request{std::make_shared<pose_estimation_interface::srv::InitHalconSurfaceMatch::Request>()};
   request->model_dir_path = model_dir_path;
-  request->num_planes = num_planes;
 
   if (!temp_node_client->wait_for_service(10s))
   {

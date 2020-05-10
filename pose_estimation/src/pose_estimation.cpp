@@ -66,6 +66,7 @@ namespace pose_estimation
       const std::shared_ptr<pose_estimation_interface::srv::EstimatePose::Request> request,
       std::shared_ptr<pose_estimation_interface::srv::EstimatePose::Response> response)
   {
+    num_planes_ = request->num_planes;
     std::vector<float> pose_estimate;
     pose_estimate.reserve(7);
     if (pnt_cld_recieved_)
@@ -85,7 +86,6 @@ namespace pose_estimation
       const std::shared_ptr<pose_estimation_interface::srv::InitCvSurfaceMatch::Request> request,
       std::shared_ptr<pose_estimation_interface::srv::InitCvSurfaceMatch::Response> response)
   {
-    num_planes_ = request->num_planes;
     cv_surface_match_.load_models_from_dir(request->model_dir_path);
     cv_surface_match_.train_models();
     response->success = true;
@@ -97,7 +97,6 @@ namespace pose_estimation
       const std::shared_ptr<pose_estimation_interface::srv::InitHalconSurfaceMatch::Request> request,
       std::shared_ptr<pose_estimation_interface::srv::InitHalconSurfaceMatch::Response> response)
   {
-    num_planes_ = request->num_planes;
     halcon_surface_match_.load_models(request->model_dir_path);
     response->success = true;
     use_halcon_match_ = true;
