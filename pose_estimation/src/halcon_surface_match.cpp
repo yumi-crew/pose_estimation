@@ -77,8 +77,11 @@ bool HalconSurfaceMatch::find_object_in_scene(std::string object, std::vector<fl
   gen_param_value[0] = 10;
   gen_param_name[1] = "pose_ref_use_scene_normals";
   gen_param_value[1] = "true";
-  gen_param_name[2] = "pose_ref_num_steps";
-  gen_param_value[2] = 20;
+  gen_param_name[2] = "dense_pose_refinement";
+  gen_param_value[2] = "true";
+  gen_param_name[3] = "pose_ref_num_steps";
+  gen_param_value[3] = 20;
+  
 
   try
   {
