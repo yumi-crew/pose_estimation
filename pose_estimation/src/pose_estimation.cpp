@@ -66,6 +66,10 @@ namespace pose_estimation
       const std::shared_ptr<pose_estimation_interface::srv::EstimatePose::Request> request,
       std::shared_ptr<pose_estimation_interface::srv::EstimatePose::Response> response)
   {
+    while(!pnt_cld_recieved_)
+    {
+      sleep(0.1);
+    }
     num_planes_ = request->num_planes;
     std::vector<float> pose_estimate;
     pose_estimate.reserve(7);
