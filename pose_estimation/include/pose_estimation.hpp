@@ -56,6 +56,15 @@ namespace pose_estimation
     bool remove_planes(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud, int num_planes);
 
     /**
+    * Removes points from a point cloud inside or outside a sphere around a point.
+    * @param cloud point cloud to be filtered.
+    * @param remove_inliers if true points outside the sphere are removed, if false points inside are removed.
+    * @param point center point of the sphere, must contain at least 3 values. 
+    * @param filter_radius radius of the filter sphere.
+    **/ 
+    void filter_points(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud, bool remove_inliers, std::vector<float> point, float filter_radius);
+
+    /**
     * Generates and publishes a geometry_msgs::msg::PoseStamped message from a std::vector containing position x, y, z,
     * and orientation represented by a unit quaternion q1, q2, q3, q4, where q4 is the scalar part. The pose is published
     * to the topic /object_pose.
@@ -138,6 +147,9 @@ namespace pose_estimation
     HalconSurfaceMatch halcon_surface_match_;
     bool use_halcon_match_;
     int num_planes_;
+    std::vector<float> filter_pose_;
+    std::string filter_out_;
+    float filter_radius_;
     /*Path to the current scene, for halcon surface match.*/
     std::string path_to_scene_;
     xt::xarray<float> xyz_;

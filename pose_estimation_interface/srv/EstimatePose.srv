@@ -1,4 +1,7 @@
 string object
 int64 num_planes
+string filter_out
+float32 filter_radius
+bool store_filter_pose
 ---
 bool success

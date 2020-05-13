@@ -10,7 +10,7 @@ PoseEstimationManager::PoseEstimationManager(const std::string &node_name)
 {
 }
 
-unsigned int PoseEstimationManager::get_state(std::string ls_node, std::chrono::seconds time_out = 3s)
+unsigned int PoseEstimationManager::get_state(std::string ls_node, std::chrono::seconds time_out)
 {
   auto temp_node{std::make_unique<rclcpp::Node>("temp_node")};
   auto temp_node_client{temp_node->create_client<lifecycle_msgs::srv::GetState>(ls_node + "/get_state")};
@@ -42,7 +42,7 @@ unsigned int PoseEstimationManager::get_state(std::string ls_node, std::chrono::
   }
 }
 
-bool PoseEstimationManager::change_state(std::string ls_node, std::uint8_t transition, std::chrono::seconds time_out = 8s)
+bool PoseEstimationManager::change_state(std::string ls_node, std::uint8_t transition, std::chrono::seconds time_out)
 {
   auto temp_node{std::make_unique<rclcpp::Node>("temp_node")};
   auto temp_node_client{temp_node->create_client<lifecycle_msgs::srv::ChangeState>(ls_node + "/change_state")};
@@ -77,7 +77,7 @@ bool PoseEstimationManager::change_state(std::string ls_node, std::uint8_t trans
   }
 }
 
-bool PoseEstimationManager::call_capture_srv(std::chrono::seconds time_out = 5s)
+bool PoseEstimationManager::call_capture_srv(std::chrono::seconds time_out)
 {
   auto temp_node{std::make_unique<rclcpp::Node>("temp_node")};
   auto temp_node_client{temp_node->create_client<zivid_interfaces::srv::Capture>("/capture")};
@@ -99,13 +99,16 @@ bool PoseEstimationManager::call_capture_srv(std::chrono::seconds time_out = 5s)
   return true;
 }
 
-bool PoseEstimationManager::call_estimate_pose_srv(std::string object, int num_planes, std::chrono::seconds time_out = 5s)
+bool PoseEstimationManager::call_estimate_pose_srv(std::string object, int num_planes, std::chrono::seconds time_out, std::string filter_out, float filter_radius, bool store_filter_pose)
 {
   auto temp_node{std::make_unique<rclcpp::Node>("temp_node")};
   auto temp_node_client{temp_node->create_client<pose_estimation_interface::srv::EstimatePose>("/estimate_pose")};
   auto request{std::make_shared<pose_estimation_interface::srv::EstimatePose::Request>()};
   request->object = object;
   request->num_planes = num_planes;
+  request->filter_out = filter_out;
+  request->filter_radius = filter_radius;
+  request->store_filter_pose = store_filter_pose;
 
   if (!temp_node_client->wait_for_service(10s))
   {

@@ -66,16 +66,20 @@ namespace pose_estimation
       const std::shared_ptr<pose_estimation_interface::srv::EstimatePose::Request> request,
       std::shared_ptr<pose_estimation_interface::srv::EstimatePose::Response> response)
   {
-    while(!pnt_cld_recieved_)
+    while (!pnt_cld_recieved_)
     {
       sleep(0.1);
     }
     num_planes_ = request->num_planes;
+    filter_out_ = request->filter_out;
+    filter_radius_ = request->filter_radius;
     std::vector<float> pose_estimate;
     pose_estimate.reserve(7);
     if (pnt_cld_recieved_)
     {
       estimate_pose(request->object, pose_estimate);
+      if (request->store_filter_pose)
+        filter_pose_ = pose_estimate;
     }
     if (pose_estimation_success_)
     {
@@ -228,6 +232,14 @@ namespace pose_estimation
     std::vector<int> idx;
     pcl::removeNaNFromPointCloud(*cloud, *cloud, idx);
 
+    if (!filter_out_.empty() && !filter_pose_.empty() && filter_radius_ > 0.0)
+    {
+      bool remove_inliers{false}; //remove outliers
+      if (filter_out_ == "inliers")
+        remove_inliers = true;
+      filter_points(cloud, remove_inliers, filter_pose_, filter_radius_);
+    }
+
     if (!remove_planes(cloud, num_planes))
     {
       std::cout << "Remove planes failed" << std::endl;
@@ -253,7 +265,7 @@ namespace pose_estimation
 
   bool PoseEstimation::remove_planes(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud, int num_planes)
   {
-    if(num_planes == 0)
+    if (num_planes == 0)
       return true;
     pcl::SACSegmentation<pcl::PointXYZ> seg;
     pcl::PointCloud<pcl::PointXYZ>::Ptr inliers(new pcl::PointCloud<pcl::PointXYZ>);
@@ -315,6 +327,33 @@ namespace pose_estimation
       return true;
     }
     return true;
+  }
+
+  void PoseEstimation::filter_points(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud, bool remove_inliers, std::vector<float> point, float filter_radius)
+  {
+    pcl::PointIndices::Ptr pts_close_to_pnt_idx(new pcl::PointIndices);
+#pragma omp parallel for
+    for (uint i = 0; i < cloud->points.size(); ++i)
+    {
+      float dx = point[0] - cloud->points[i].x;
+      float dy = point[1] - cloud->points[i].y;
+      float dz = point[2] - cloud->points[i].z;
+
+      float d = std::sqrt(dx * dx + dy * dy + dz * dz);
+      if (d <= filter_radius)
+      {
+#pragma omp critical
+        {
+          pts_close_to_pnt_idx->indices.push_back(i);
+        }
+      }
+    }
+
+    pcl::ExtractIndices<pcl::PointXYZ> extract;
+    extract.setInputCloud(cloud);
+    extract.setIndices(pts_close_to_pnt_idx);
+    extract.setNegative(remove_inliers);
+    extract.filter(*cloud);
   }
 
 } //namespace pose_estimation

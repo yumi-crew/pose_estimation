@@ -31,7 +31,7 @@ public:
   bool change_state(std::string ls_node, std::uint8_t transition, std::chrono::seconds time_out);
 
   bool call_capture_srv(std::chrono::seconds time_out);
-  bool call_estimate_pose_srv(std::string object, int num_planes, std::chrono::seconds time_out);
+  bool call_estimate_pose_srv(std::string object, int num_planes, std::chrono::seconds time_out, std::string filter_out = "", float filter_radius = 0.0, bool store_filter_pose = false);
   bool call_init_cv_surface_match_srv(std::string model_dir_path, std::chrono::seconds time_out);
   bool call_init_halcon_surface_match_srv(std::string model_dir_path, std::chrono::seconds time_out);
   bool call_set_param_srv(std::chrono::seconds time_out);
@@ -40,8 +40,7 @@ public:
   void clear_camera_parameters();
 
   std::shared_ptr<PoseTransformer> pose_transformer;
+
 private:
-
   std::vector<rclcpp::Parameter> camera_parameters_;
-
 };
