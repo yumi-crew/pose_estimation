@@ -147,7 +147,6 @@ namespace pose_estimation
       cv::Mat pc = create_surface_match_pc(num_planes_);
       halcon_surface_match_.update_current_scene();
       pose_estimation_success_ = halcon_surface_match_.find_object_in_scene(object, pose_estimate);
-      // pose_estimation_success_ = true;
     }
     else
     {
@@ -250,6 +249,8 @@ namespace pose_estimation
 
   bool PoseEstimation::remove_planes(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud, int num_planes)
   {
+    if(num_planes == 0)
+      return true;
     pcl::SACSegmentation<pcl::PointXYZ> seg;
     pcl::PointCloud<pcl::PointXYZ>::Ptr inliers(new pcl::PointCloud<pcl::PointXYZ>);
     pcl::ModelCoefficients::Ptr coefficients(new pcl::ModelCoefficients);
