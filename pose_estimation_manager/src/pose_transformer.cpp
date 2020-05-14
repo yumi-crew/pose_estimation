@@ -8,8 +8,8 @@ PoseTransformer::PoseTransformer() : pose_msg_(std::vector<float>())
 
   // he_calib should probably be imported from a config file at some point
   he_calibration_mat_ = Eigen::Affine3f{
-      Eigen::Translation3f{Eigen::Vector3f{0.18957, 0.063905, 0.6879233}} *
-      (Eigen::AngleAxisf(3.033779, Eigen::Vector3f({-0.437416, 0.8798198, -0.1859687}))).toRotationMatrix()};
+      Eigen::Translation3f{Eigen::Vector3f{0.18957, 0.0639047, 0.6879233}} *
+      (Eigen::AngleAxisf(3.0547247, Eigen::Vector3f({-0.6925705, 0.7057567, -0.1491767}))).toRotationMatrix()};
 }
 
 void PoseTransformer::pose_estimation_callback(const geometry_msgs::msg::PoseStamped::SharedPtr msg)
