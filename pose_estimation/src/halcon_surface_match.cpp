@@ -91,7 +91,7 @@ bool HalconSurfaceMatch::find_object_in_scene(std::string object, std::vector<fl
 
   try
   {
-    pose = current_scene_.FindSurfaceModel(surface_models_[object], 0.03, 1.0, 0, "true", gen_param_name, gen_param_value, &score, &result);
+    pose = current_scene_.FindSurfaceModel(surface_models_[object], 0.03, 0.5, 0, "true", gen_param_name, gen_param_value, &score, &result);
 
     std::cout << pose.Type() << std::endl;
 
