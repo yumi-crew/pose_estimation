@@ -74,16 +74,19 @@ namespace pose_estimation
     filter_out_ = request->filter_out;
     filter_radius_ = request->filter_radius;
     std::vector<float> pose_estimate;
-    pose_estimate.reserve(7);
+    pose_estimate.resize(7);
     if (pnt_cld_recieved_)
     {
       estimate_pose(request->object, pose_estimate);
-      if (request->store_filter_pose)
-        filter_pose_ = pose_estimate;
     }
     if (pose_estimation_success_)
     {
       publish_pose(pose_estimate);
+      bool store_pose = request->store_filter_pose;
+      if(store_pose)
+      {
+        filter_pose_ = pose_estimate;
+      }
     }
     response->success = pose_estimation_success_;
     pose_estimation_success_ = false;
@@ -231,8 +234,8 @@ namespace pose_estimation
     cloud->is_dense = false;
     std::vector<int> idx;
     pcl::removeNaNFromPointCloud(*cloud, *cloud, idx);
-
-    if (!filter_out_.empty() && !filter_pose_.empty() && filter_radius_ > 0.0)
+   
+    if ( (!filter_out_.empty()) && (!filter_pose_.empty()) && (filter_radius_ > 0.0) )
     {
       bool remove_inliers{false}; //remove outliers
       if (filter_out_ == "inliers")
