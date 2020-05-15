@@ -1,5 +1,6 @@
 #include "halconcpp/HalconCpp.h"
 
+#include <fstream>
 #include <map>
 #include <string>
 #include <iostream>
@@ -26,5 +27,6 @@ class HalconSurfaceMatch
   HalconCpp::HObjectModel3D current_scene_;
   std::string path_to_scene_;
   std::string models_dir_path_;
+  std::fstream pose_estimation_log_;
 };
 }

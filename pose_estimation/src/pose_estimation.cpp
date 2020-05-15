@@ -1,4 +1,5 @@
 #include <pose_estimation.hpp>
+#include <fstream>
 
 namespace pose_estimation
 {
@@ -155,9 +156,19 @@ namespace pose_estimation
     }
     else if (use_halcon_match_)
     {
+      auto t0 = this->now().seconds();
+
       cv::Mat pc = create_surface_match_pc(num_planes_);
       halcon_surface_match_.update_current_scene();
       pose_estimation_success_ = halcon_surface_match_.find_object_in_scene(object, pose_estimate);
+
+      auto match_time  = this->now().seconds() - t0;
+      std::fstream log{"pose_estimation_log.txt", std::fstream::app};
+      if(log)
+      {
+        log << ", match time: " << match_time << std::endl;
+        log.close();
+      }
     }
     else
     {
