@@ -36,7 +36,7 @@ External dependencies:
   ~~~~
   mkdir xtensor && cd xtensor
   git clone https://github.com/xtensor-stack/xtensor.git
-  cd mkdir build && cd build
+  mkdir build && cd build
   cmake -DCMAKE_INSTALL_PREFIX=/usr/local ../xtensor
   make -j8
   sudo make install
