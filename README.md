@@ -50,7 +50,7 @@ External dependencies:
   make -j8
   sudo make install
   ~~~~
-  - PCL (point cloud library)
+  - PCL version 1.10 https://github.com/PointCloudLibrary/pcl/releases/tag/pcl-1.10.0
   ~~~~
   mkdir pcl && cd pcl
   git clone https://github.com/PointCloudLibrary/pcl.git
