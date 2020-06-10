@@ -5,7 +5,7 @@ mkdir -p /home/$USER/pose_estimation/src
 vcs import /home/$USER/pose_estimation_ws/src < /home/$USER/pose_estimation_ws/src/pose_estimation/pose_estimation.repos
 cd /home/$USER/pose_estimation_ws/
 colcon build --symlink-install
-source install/local_setup.bash`
+source install/local_setup.bash
 ~~~~
 
 
@@ -24,19 +24,19 @@ External dependencies:
   make -j8
   sudo make install
   ~~~~
-  - Xtensor and xtl (xtensor template library)
+  - Xtensor and xtl (xtensor template library) [Install sequentially]
   ~~~~
   mkdir xtl && cd xtl
   git clone https://github.com/xtensor-stack/xtl.git
   mkdir build && cd build
-  cmake -D CMAKE_INSTALL_PREFIX=usr/local ../xtl
+  cmake -D CMAKE_INSTALL_PREFIX=/usr/local ../xtl
   make -j8
   sudo make install
   ~~~~
   ~~~~
   mkdir xtensor && cd xtensor
   git clone https://github.com/xtensor-stack/xtensor.git
-  cd mkdir build && cd build
+  mkdir build && cd build
   cmake -DCMAKE_INSTALL_PREFIX=/usr/local ../xtensor
   make -j8
   sudo make install
