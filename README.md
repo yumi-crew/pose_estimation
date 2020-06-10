@@ -24,12 +24,12 @@ External dependencies:
   make -j8
   sudo make install
   ~~~~
-  - Xtensor and xtl (xtensor template library)
+  - Xtensor and xtl (xtensor template library) [Install sequentially]
   ~~~~
   mkdir xtl && cd xtl
   git clone https://github.com/xtensor-stack/xtl.git
   mkdir build && cd build
-  cmake -D CMAKE_INSTALL_PREFIX=usr/local ../xtl
+  cmake -D CMAKE_INSTALL_PREFIX=/usr/local ../xtl
   make -j8
   sudo make install
   ~~~~
