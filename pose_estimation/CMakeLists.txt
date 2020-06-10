@@ -34,7 +34,7 @@ find_package(xtensor REQUIRED)
 find_package(BLAS REQUIRED) 
 find_package(LAPACK REQUIRED)
 find_package(PCL 1.10 REQUIRED)
-find_package(Halcon 18.11 REQUIRED)
+find_package(Halcon 18.11)
 find_package(OpenMP REQUIRED)
 
 message(${HALCON_INC_DIRS} " " ${HALCON_LIBS})
@@ -57,16 +57,18 @@ ament_target_dependencies(opencv_surface_match
                           OpenCV
                           )
 
-add_library(halcon_surface_match SHARED src/halcon_surface_match.cpp)
-target_include_directories(halcon_surface_match PUBLIC 
-                          include
-                          ${HALCON_INC_DIRS}                         
-                          )
-target_link_libraries(halcon_surface_match 
-                        libstdc++fs.a
-                        ${HALCON_LIBS}
-                        )
 
+if(Halcon_FOUND)
+  add_library(halcon_surface_match SHARED src/halcon_surface_match.cpp)
+  target_include_directories(halcon_surface_match PUBLIC 
+                            include
+                            ${HALCON_INC_DIRS}                         
+                            )
+  target_link_libraries(halcon_surface_match 
+                          libstdc++fs.a
+                          ${HALCON_LIBS}
+                          )
+endif()
           
 
 
@@ -99,20 +101,20 @@ rclcpp_components_register_node(pose_estimation_library
                           "pose_estimation")
 
 
-add_executable(test_script src/test_script.cpp)
-target_include_directories(test_script PRIVATE include)
-target_link_libraries(test_script
-                      opencv_surface_match
-                      halcon_surface_match
-                      chessboard_pose_estimator
-                      Zivid::Core
-                      Zivid::Vis3D
-                      xtensor
-                      ${OpenCV_LIBS}
-                      ${BLAS_LIBRARIES}
-                      ${LAPACK_LIBRARIES}
-                      ${HALCON_LIBS}
-                      )
+# add_executable(test_script src/test_script.cpp)
+# target_include_directories(test_script PRIVATE include)
+# target_link_libraries(test_script
+#                       opencv_surface_match
+#                       halcon_surface_match
+#                       chessboard_pose_estimator
+#                       Zivid::Core
+#                       Zivid::Vis3D
+#                       xtensor
+#                       ${OpenCV_LIBS}
+#                       ${BLAS_LIBRARIES}
+#                       ${LAPACK_LIBRARIES}
+#                       ${HALCON_LIBS}
+#                       )
 
 
 install(DIRECTORY include/ DESTINATION include)
@@ -124,10 +126,10 @@ install(TARGETS
         LIBRARY DESTINATION lib
         RUNTIME DESTINATION bin)
 
-install(TARGETS
-        test_script
-        DESTINATION lib/${PROJECT_NAME}
-        )
+# install(TARGETS
+#         test_script
+#         DESTINATION lib/${PROJECT_NAME}
+#         )
 
 install(DIRECTORY
         launch
