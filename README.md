@@ -53,10 +53,10 @@ External dependencies:
   - PCL version 1.10 https://github.com/PointCloudLibrary/pcl/releases/tag/pcl-1.10.0
   ~~~~
   mkdir pcl && cd pcl
-  [Do not use this (1.81...), use link above] ~~git clone https://github.com/PointCloudLibrary/pcl.git~~
+  [Do not use this (1.81...), download from link above] git clone https://github.com/PointCloudLibrary/pcl.git
   mkdir build && cd build
   cmake ../pcl
-  make -j8
+  make -j2
   sudo make install
   ~~~~
   - HALCON: https://www.mvtec.com/products/halcon/
